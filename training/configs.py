@@ -9,7 +9,7 @@ def build_config(config_name, job_id):
 	"""
 	Returns dictionary of hyperparameters.
 	"""
-	
+
 	# Use job_id to seed any random hyperparameters.
 	rs = np.random.RandomState(job_id)
 
@@ -120,7 +120,11 @@ def build_config(config_name, job_id):
 		CONFIG = {
 			"MAX_LEARNING_RATE": 10 ** rs.uniform(-1, 0),
 		}
-
+	elif config_name == "aramis":
+		CONFIG = {
+			"DEVICE": "GPU",
+			"NUM_SLEAP_KEYPOINTS": 2
+		}
 	else:
 		raise ValueError(
 			f"'{config_name}' was not recognized as a "

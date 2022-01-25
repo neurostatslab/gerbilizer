@@ -1,14 +1,22 @@
+import os
+
 import numpy as np
 import h5py
 from tqdm import trange
 
 nt_new = 10
 random_state = np.random.RandomState(123)
+index_file_path = 'filtered_idx_notail.npy'
 
 with h5py.File('preprocessed_vocalization_dataset.h5') as f_src:
-
 	# All vocalizations.
-	all_vocs = np.array(f_src["vocalizations"])
+	all_vocs = np.array(f_src["vocalizations"][..., :2, :])
+	# Select only valid indices
+	if os.path.exists(index_file_path):
+		indices = np.load(index_file_path)
+		all_vocs = all_vocs[indices]
+		del indices
+
 	n_samples = all_vocs.shape[0]
 
 	# Create random train, val, test set (80-10-10 split)
