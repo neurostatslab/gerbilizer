@@ -28,6 +28,9 @@ def build_model(CONFIG):
     elif CONFIG["ARCHITECTURE"] == "GerbilizerReLUDenseNet":
         model = GerbilizerDenseNet(CONFIG)
     
+    if CONFIG["DEVICE"] == "GPU":
+        model = model.cuda()
+    
     def loss_function(x, y):
         return torch.mean(torch.square(x - y), axis=-1)
 

@@ -95,6 +95,7 @@ np.random.seed(CONFIG["NUMPY_SEED"])
 # Specify network architecture and loss function.
 model, loss_function = build_model(CONFIG)
 logging.info(model.__repr__())
+logging.info(f"Model device: {next(model.parameters()).device.__repr__()}")
 
 # Specify optimizer.
 optimizer = torch.optim.SGD(
