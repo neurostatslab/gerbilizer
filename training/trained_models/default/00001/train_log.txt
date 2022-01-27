@@ -1,4 +1,0 @@
-2022-01-21 18:25:58,454 INFO     Wrote config.txt file
-2022-01-21 18:26:50,798 INFO     Wrote config.txt file
-2022-01-21 18:27:18,269 INFO     Wrote config.txt file
-2022-01-21 18:27:25,531 INFO     Wrote config.txt file
