@@ -4,11 +4,11 @@ import numpy as np
 import h5py
 from tqdm import trange
 
-nt_new = 10
+nt_new = 4
 random_state = np.random.RandomState(123)
 index_file_path = 'filtered_idx_notail.npy'
 
-with h5py.File('preprocessed_vocalization_dataset.h5') as f_src:
+with h5py.File('preprocessed_vocalization_dataset_100ms.h5') as f_src:
 	# All vocalizations.
 	all_vocs = np.array(f_src["vocalizations"])
 	# Select only valid indices

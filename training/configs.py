@@ -125,6 +125,23 @@ def build_config(config_name, job_id):
 			"DEVICE": "GPU",
 			"NUM_SLEAP_KEYPOINTS": 2
 		}
+	elif config_name == "aramis_100ms":
+		# This set of models experiments with the effects of padding/limiting
+		# vocalizations to 100ms, which truncates a small proportion of events
+		# while allowing most to occupy a significant proportion of the space 
+		# they're allotted
+
+		# Also going to mess around with weight decay and learning rate since
+		# this trains fairly quickly
+		log_weightdecay = rs.uniform(-5, -3)
+		log_minlr = rs.uniform(-5, -3)
+		CONFIG = {
+			"DEVICE": "GPU",
+			"NUM_SLEAP_KEYPOINTS": 2,
+			"WEIGHT_DECAY": np.power(10, log_weightdecay),  # between 1e-5 & 1e-3
+			"MIN_LEARNING_RATE": np.power(10, log_minlr)  # ^^^
+		}
+
 	else:
 		raise ValueError(
 			f"'{config_name}' was not recognized as a "
