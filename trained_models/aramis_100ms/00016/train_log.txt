@@ -1,0 +1,263 @@
+2022-01-26 14:54:28,911 INFO     Wrote config.txt file
+2022-01-26 14:54:29,036 INFO     GerbilizerDenseNet(
+  (pooling): AvgPool1d(kernel_size=(2,), stride=(2,), padding=(0,))
+  (f_convs): ModuleList(
+    (0): Conv1d(4, 11, kernel_size=(51,), stride=(2,), padding=(25,))
+    (1): Conv1d(15, 10, kernel_size=(51,), stride=(2,), padding=(25,))
+    (2): Conv1d(25, 10, kernel_size=(51,), stride=(2,), padding=(25,))
+    (3): Conv1d(35, 10, kernel_size=(51,), stride=(2,), padding=(25,))
+    (4): Conv1d(45, 10, kernel_size=(51,), stride=(2,), padding=(25,))
+    (5): Conv1d(55, 10, kernel_size=(51,), stride=(2,), padding=(25,))
+    (6): Conv1d(65, 10, kernel_size=(51,), stride=(2,), padding=(25,))
+    (7): Conv1d(75, 10, kernel_size=(51,), stride=(2,), padding=(25,))
+    (8): Conv1d(85, 10, kernel_size=(49,), stride=(2,), padding=(24,))
+    (9): Conv1d(95, 10, kernel_size=(37,), stride=(2,), padding=(18,))
+    (10): Conv1d(105, 10, kernel_size=(19,), stride=(2,), padding=(9,))
+    (11): Conv1d(115, 10, kernel_size=(9,), stride=(2,), padding=(4,))
+  )
+  (g_convs): ModuleList(
+    (0): Conv1d(4, 11, kernel_size=(51,), stride=(2,), padding=(25,))
+    (1): Conv1d(15, 10, kernel_size=(51,), stride=(2,), padding=(25,))
+    (2): Conv1d(25, 10, kernel_size=(51,), stride=(2,), padding=(25,))
+    (3): Conv1d(35, 10, kernel_size=(51,), stride=(2,), padding=(25,))
+    (4): Conv1d(45, 10, kernel_size=(51,), stride=(2,), padding=(25,))
+    (5): Conv1d(55, 10, kernel_size=(51,), stride=(2,), padding=(25,))
+    (6): Conv1d(65, 10, kernel_size=(51,), stride=(2,), padding=(25,))
+    (7): Conv1d(75, 10, kernel_size=(51,), stride=(2,), padding=(25,))
+    (8): Conv1d(85, 10, kernel_size=(49,), stride=(2,), padding=(24,))
+    (9): Conv1d(95, 10, kernel_size=(37,), stride=(2,), padding=(18,))
+    (10): Conv1d(105, 10, kernel_size=(19,), stride=(2,), padding=(9,))
+    (11): Conv1d(115, 10, kernel_size=(9,), stride=(2,), padding=(4,))
+  )
+  (norm_layers): ModuleList(
+    (0): Identity()
+    (1): Identity()
+    (2): Identity()
+    (3): Identity()
+    (4): Identity()
+    (5): Identity()
+    (6): Identity()
+    (7): Identity()
+    (8): Identity()
+    (9): Identity()
+    (10): Identity()
+    (11): Identity()
+  )
+  (x_coord_readout): Linear(in_features=125, out_features=2, bias=True)
+  (y_coord_readout): Linear(in_features=125, out_features=2, bias=True)
+)
+2022-01-26 14:54:29,036 INFO     Model device: device(type='cuda', index=0)
+2022-01-26 14:54:29,036 INFO     Training set:   <dataloaders.GerbilVocalizationDataset object at 0x0000023A5ED0DBE0>
+2022-01-26 14:54:29,036 INFO     Validation set:   <dataloaders.GerbilVocalizationDataset object at 0x0000023A5ED0DD00>
+2022-01-26 14:54:29,036 INFO     Test set:   <dataloaders.GerbilVocalizationDataset object at 0x0000023A5ED0DDC0>
+2022-01-26 14:54:29,036 INFO      ==== STARTING TRAINING ====
+
+2022-01-26 14:54:29,036 INFO     >> SAVING INITIAL MODEL WEIGHTS TO C:\Users\dailyuser\git-repos\gerbilizer\trained_models\aramis_100ms\00016\init_weights.pt
+2022-01-26 14:54:29,036 INFO     >> STARTING EPOCH 1
+2022-01-26 14:54:32,176 INFO     TRAINING. 	 Epoch 1 / 20 [64/7896]   minibatch loss: 0.02566
+2022-01-26 14:54:35,284 INFO     TRAINING. 	 Epoch 1 / 20 [1792/7896]   minibatch loss: 0.01269
+2022-01-26 14:54:38,315 INFO     TRAINING. 	 Epoch 1 / 20 [3520/7896]   minibatch loss: 0.01599
+2022-01-26 14:54:41,345 INFO     TRAINING. 	 Epoch 1 / 20 [5248/7896]   minibatch loss: 0.01223
+2022-01-26 14:54:44,423 INFO     TRAINING. 	 Epoch 1 / 20 [6976/7896]   minibatch loss: 0.01197
+2022-01-26 14:54:46,063 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:54:46,891 INFO     >> FINISHED EPOCH IN: 18 secs
+2022-01-26 14:54:46,891 INFO     >> VALIDATION LOSS IS BEST SO FAR, SAVING WEIGHTS TO C:\Users\dailyuser\git-repos\gerbilizer\trained_models\aramis_100ms\00016\best_weights.pt
+2022-01-26 14:54:46,906 INFO     >> STARTING EPOCH 2
+2022-01-26 14:54:46,906 INFO     >> TIME ELAPSED SO FAR:	18 secs
+2022-01-26 14:54:46,906 INFO     >> EST. TIME REMAINING:	05 mins, 40 secs
+2022-01-26 14:54:47,469 INFO     TRAINING. 	 Epoch 2 / 20 [320/7896]   minibatch loss: 0.01365
+2022-01-26 14:54:50,569 INFO     TRAINING. 	 Epoch 2 / 20 [2048/7896]   minibatch loss: 0.01264
+2022-01-26 14:54:53,616 INFO     TRAINING. 	 Epoch 2 / 20 [3776/7896]   minibatch loss: 0.01555
+2022-01-26 14:54:56,678 INFO     TRAINING. 	 Epoch 2 / 20 [5504/7896]   minibatch loss: 0.01496
+2022-01-26 14:54:59,755 INFO     TRAINING. 	 Epoch 2 / 20 [7232/7896]   minibatch loss: 0.01331
+2022-01-26 14:55:00,895 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:55:01,676 INFO     >> FINISHED EPOCH IN: 15 secs
+2022-01-26 14:55:01,676 INFO     >> STARTING EPOCH 3
+2022-01-26 14:55:01,676 INFO     >> TIME ELAPSED SO FAR:	33 secs
+2022-01-26 14:55:01,676 INFO     >> EST. TIME REMAINING:	04 mins, 26 secs
+2022-01-26 14:55:02,832 INFO     TRAINING. 	 Epoch 3 / 20 [640/7896]   minibatch loss: 0.01463
+2022-01-26 14:55:05,878 INFO     TRAINING. 	 Epoch 3 / 20 [2368/7896]   minibatch loss: 0.01831
+2022-01-26 14:55:08,940 INFO     TRAINING. 	 Epoch 3 / 20 [4096/7896]   minibatch loss: 0.01335
+2022-01-26 14:55:12,018 INFO     TRAINING. 	 Epoch 3 / 20 [5824/7896]   minibatch loss: 0.01237
+2022-01-26 14:55:15,048 INFO     TRAINING. 	 Epoch 3 / 20 [7552/7896]   minibatch loss: 0.01310
+2022-01-26 14:55:15,610 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:55:16,438 INFO     >> FINISHED EPOCH IN: 15 secs
+2022-01-26 14:55:16,438 INFO     >> STARTING EPOCH 4
+2022-01-26 14:55:16,438 INFO     >> TIME ELAPSED SO FAR:	47 secs
+2022-01-26 14:55:16,438 INFO     >> EST. TIME REMAINING:	04 mins, 11 secs
+2022-01-26 14:55:18,141 INFO     TRAINING. 	 Epoch 4 / 20 [960/7896]   minibatch loss: 0.01380
+2022-01-26 14:55:21,195 INFO     TRAINING. 	 Epoch 4 / 20 [2688/7896]   minibatch loss: 0.01687
+2022-01-26 14:55:24,303 INFO     TRAINING. 	 Epoch 4 / 20 [4416/7896]   minibatch loss: 0.01124
+2022-01-26 14:55:27,365 INFO     TRAINING. 	 Epoch 4 / 20 [6144/7896]   minibatch loss: 0.01280
+2022-01-26 14:55:30,458 INFO     TRAINING. 	 Epoch 4 / 20 [7872/7896]   minibatch loss: 0.01345
+2022-01-26 14:55:30,458 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:55:31,302 INFO     >> FINISHED EPOCH IN: 15 secs
+2022-01-26 14:55:31,302 INFO     >> VALIDATION LOSS IS BEST SO FAR, SAVING WEIGHTS TO C:\Users\dailyuser\git-repos\gerbilizer\trained_models\aramis_100ms\00016\best_weights.pt
+2022-01-26 14:55:31,317 INFO     >> STARTING EPOCH 5
+2022-01-26 14:55:31,317 INFO     >> TIME ELAPSED SO FAR:	01 mins, 02 secs
+2022-01-26 14:55:31,317 INFO     >> EST. TIME REMAINING:	03 mins, 58 secs
+2022-01-26 14:55:33,583 INFO     TRAINING. 	 Epoch 5 / 20 [1280/7896]   minibatch loss: 0.01355
+2022-01-26 14:55:36,692 INFO     TRAINING. 	 Epoch 5 / 20 [3008/7896]   minibatch loss: 0.01404
+2022-01-26 14:55:39,800 INFO     TRAINING. 	 Epoch 5 / 20 [4736/7896]   minibatch loss: 0.01591
+2022-01-26 14:55:42,909 INFO     TRAINING. 	 Epoch 5 / 20 [6464/7896]   minibatch loss: 0.01080
+2022-01-26 14:55:45,455 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:55:45,923 INFO     TESTING VALIDATION SET. Epoch 5 [576/987]
+2022-01-26 14:55:46,267 INFO     >> FINISHED EPOCH IN: 15 secs
+2022-01-26 14:55:46,267 INFO     >> STARTING EPOCH 6
+2022-01-26 14:55:46,267 INFO     >> TIME ELAPSED SO FAR:	01 mins, 17 secs
+2022-01-26 14:55:46,267 INFO     >> EST. TIME REMAINING:	03 mins, 45 secs
+2022-01-26 14:55:49,032 INFO     TRAINING. 	 Epoch 6 / 20 [1536/7896]   minibatch loss: 0.01408
+2022-01-26 14:55:52,055 INFO     TRAINING. 	 Epoch 6 / 20 [3200/7896]   minibatch loss: 0.01034
+2022-01-26 14:55:55,117 INFO     TRAINING. 	 Epoch 6 / 20 [4928/7896]   minibatch loss: 0.01206
+2022-01-26 14:55:58,225 INFO     TRAINING. 	 Epoch 6 / 20 [6656/7896]   minibatch loss: 0.01268
+2022-01-26 14:56:00,475 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:56:01,256 INFO     TESTING VALIDATION SET. Epoch 6 [960/987]
+2022-01-26 14:56:01,271 INFO     >> FINISHED EPOCH IN: 15 secs
+2022-01-26 14:56:01,271 INFO     >> VALIDATION LOSS IS BEST SO FAR, SAVING WEIGHTS TO C:\Users\dailyuser\git-repos\gerbilizer\trained_models\aramis_100ms\00016\best_weights.pt
+2022-01-26 14:56:01,287 INFO     >> STARTING EPOCH 7
+2022-01-26 14:56:01,287 INFO     >> TIME ELAPSED SO FAR:	01 mins, 32 secs
+2022-01-26 14:56:01,287 INFO     >> EST. TIME REMAINING:	03 mins, 30 secs
+2022-01-26 14:56:04,380 INFO     TRAINING. 	 Epoch 7 / 20 [1728/7896]   minibatch loss: 0.01221
+2022-01-26 14:56:07,473 INFO     TRAINING. 	 Epoch 7 / 20 [3456/7896]   minibatch loss: 0.01380
+2022-01-26 14:56:10,581 INFO     TRAINING. 	 Epoch 7 / 20 [5184/7896]   minibatch loss: 0.01355
+2022-01-26 14:56:13,596 INFO     TRAINING. 	 Epoch 7 / 20 [6848/7896]   minibatch loss: 0.01411
+2022-01-26 14:56:15,487 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:56:16,299 INFO     >> FINISHED EPOCH IN: 15 secs
+2022-01-26 14:56:16,299 INFO     >> STARTING EPOCH 8
+2022-01-26 14:56:16,299 INFO     >> TIME ELAPSED SO FAR:	01 mins, 47 secs
+2022-01-26 14:56:16,299 INFO     >> EST. TIME REMAINING:	03 mins, 16 secs
+2022-01-26 14:56:16,627 INFO     TRAINING. 	 Epoch 8 / 20 [192/7896]   minibatch loss: 0.01548
+2022-01-26 14:56:19,642 INFO     TRAINING. 	 Epoch 8 / 20 [1856/7896]   minibatch loss: 0.01223
+2022-01-26 14:56:22,649 INFO     TRAINING. 	 Epoch 8 / 20 [3520/7896]   minibatch loss: 0.01401
+2022-01-26 14:56:25,757 INFO     TRAINING. 	 Epoch 8 / 20 [5248/7896]   minibatch loss: 0.01058
+2022-01-26 14:56:28,835 INFO     TRAINING. 	 Epoch 8 / 20 [6976/7896]   minibatch loss: 0.01254
+2022-01-26 14:56:30,444 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:56:31,240 INFO     >> FINISHED EPOCH IN: 15 secs
+2022-01-26 14:56:31,240 INFO     >> STARTING EPOCH 9
+2022-01-26 14:56:31,240 INFO     >> TIME ELAPSED SO FAR:	02 mins, 02 secs
+2022-01-26 14:56:31,240 INFO     >> EST. TIME REMAINING:	02 mins, 60 secs
+2022-01-26 14:56:31,928 INFO     TRAINING. 	 Epoch 9 / 20 [384/7896]   minibatch loss: 0.00969
+2022-01-26 14:56:35,021 INFO     TRAINING. 	 Epoch 9 / 20 [2112/7896]   minibatch loss: 0.01463
+2022-01-26 14:56:38,083 INFO     TRAINING. 	 Epoch 9 / 20 [3840/7896]   minibatch loss: 0.01320
+2022-01-26 14:56:41,129 INFO     TRAINING. 	 Epoch 9 / 20 [5568/7896]   minibatch loss: 0.00996
+2022-01-26 14:56:44,206 INFO     TRAINING. 	 Epoch 9 / 20 [7296/7896]   minibatch loss: 0.01439
+2022-01-26 14:56:45,237 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:56:46,049 INFO     >> FINISHED EPOCH IN: 15 secs
+2022-01-26 14:56:46,049 INFO     >> VALIDATION LOSS IS BEST SO FAR, SAVING WEIGHTS TO C:\Users\dailyuser\git-repos\gerbilizer\trained_models\aramis_100ms\00016\best_weights.pt
+2022-01-26 14:56:46,065 INFO     >> STARTING EPOCH 10
+2022-01-26 14:56:46,065 INFO     >> TIME ELAPSED SO FAR:	02 mins, 17 secs
+2022-01-26 14:56:46,065 INFO     >> EST. TIME REMAINING:	02 mins, 43 secs
+2022-01-26 14:56:47,299 INFO     TRAINING. 	 Epoch 10 / 20 [704/7896]   minibatch loss: 0.01251
+2022-01-26 14:56:50,345 INFO     TRAINING. 	 Epoch 10 / 20 [2432/7896]   minibatch loss: 0.01292
+2022-01-26 14:56:53,446 INFO     TRAINING. 	 Epoch 10 / 20 [4160/7896]   minibatch loss: 0.01289
+2022-01-26 14:56:56,539 INFO     TRAINING. 	 Epoch 10 / 20 [5888/7896]   minibatch loss: 0.01088
+2022-01-26 14:56:59,616 INFO     TRAINING. 	 Epoch 10 / 20 [7616/7896]   minibatch loss: 0.01296
+2022-01-26 14:57:00,069 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:57:00,944 INFO     >> FINISHED EPOCH IN: 15 secs
+2022-01-26 14:57:00,944 INFO     >> STARTING EPOCH 11
+2022-01-26 14:57:00,944 INFO     >> TIME ELAPSED SO FAR:	02 mins, 32 secs
+2022-01-26 14:57:00,944 INFO     >> EST. TIME REMAINING:	02 mins, 29 secs
+2022-01-26 14:57:02,647 INFO     TRAINING. 	 Epoch 11 / 20 [960/7896]   minibatch loss: 0.01436
+2022-01-26 14:57:05,677 INFO     TRAINING. 	 Epoch 11 / 20 [2624/7896]   minibatch loss: 0.01353
+2022-01-26 14:57:08,739 INFO     TRAINING. 	 Epoch 11 / 20 [4352/7896]   minibatch loss: 0.00930
+2022-01-26 14:57:11,832 INFO     TRAINING. 	 Epoch 11 / 20 [6080/7896]   minibatch loss: 0.01345
+2022-01-26 14:57:14,847 INFO     TRAINING. 	 Epoch 11 / 20 [7744/7896]   minibatch loss: 0.00997
+2022-01-26 14:57:15,097 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:57:15,925 INFO     >> FINISHED EPOCH IN: 15 secs
+2022-01-26 14:57:15,925 INFO     >> STARTING EPOCH 12
+2022-01-26 14:57:15,925 INFO     >> TIME ELAPSED SO FAR:	02 mins, 47 secs
+2022-01-26 14:57:15,925 INFO     >> EST. TIME REMAINING:	02 mins, 15 secs
+2022-01-26 14:57:17,909 INFO     TRAINING. 	 Epoch 12 / 20 [1088/7896]   minibatch loss: 0.01323
+2022-01-26 14:57:20,947 INFO     TRAINING. 	 Epoch 12 / 20 [2752/7896]   minibatch loss: 0.01248
+2022-01-26 14:57:24,009 INFO     TRAINING. 	 Epoch 12 / 20 [4480/7896]   minibatch loss: 0.01250
+2022-01-26 14:57:27,117 INFO     TRAINING. 	 Epoch 12 / 20 [6208/7896]   minibatch loss: 0.01289
+2022-01-26 14:57:30,101 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:57:30,148 INFO     TESTING VALIDATION SET. Epoch 12 [64/987]
+2022-01-26 14:57:30,976 INFO     >> FINISHED EPOCH IN: 15 secs
+2022-01-26 14:57:30,976 INFO     >> VALIDATION LOSS IS BEST SO FAR, SAVING WEIGHTS TO C:\Users\dailyuser\git-repos\gerbilizer\trained_models\aramis_100ms\00016\best_weights.pt
+2022-01-26 14:57:30,976 INFO     >> STARTING EPOCH 13
+2022-01-26 14:57:30,976 INFO     >> TIME ELAPSED SO FAR:	03 mins, 02 secs
+2022-01-26 14:57:30,976 INFO     >> EST. TIME REMAINING:	02 mins, 01 secs
+2022-01-26 14:57:33,225 INFO     TRAINING. 	 Epoch 13 / 20 [1280/7896]   minibatch loss: 0.01023
+2022-01-26 14:57:36,303 INFO     TRAINING. 	 Epoch 13 / 20 [3008/7896]   minibatch loss: 0.01143
+2022-01-26 14:57:39,318 INFO     TRAINING. 	 Epoch 13 / 20 [4672/7896]   minibatch loss: 0.01221
+2022-01-26 14:57:42,333 INFO     TRAINING. 	 Epoch 13 / 20 [6336/7896]   minibatch loss: 0.01334
+2022-01-26 14:57:45,113 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:57:45,379 INFO     TESTING VALIDATION SET. Epoch 13 [320/987]
+2022-01-26 14:57:45,957 INFO     >> FINISHED EPOCH IN: 15 secs
+2022-01-26 14:57:45,957 INFO     >> VALIDATION LOSS IS BEST SO FAR, SAVING WEIGHTS TO C:\Users\dailyuser\git-repos\gerbilizer\trained_models\aramis_100ms\00016\best_weights.pt
+2022-01-26 14:57:45,957 INFO     >> STARTING EPOCH 14
+2022-01-26 14:57:45,957 INFO     >> TIME ELAPSED SO FAR:	03 mins, 17 secs
+2022-01-26 14:57:45,957 INFO     >> EST. TIME REMAINING:	01 mins, 45 secs
+2022-01-26 14:57:48,488 INFO     TRAINING. 	 Epoch 14 / 20 [1408/7896]   minibatch loss: 0.01055
+2022-01-26 14:57:51,510 INFO     TRAINING. 	 Epoch 14 / 20 [3136/7896]   minibatch loss: 0.00891
+2022-01-26 14:57:54,603 INFO     TRAINING. 	 Epoch 14 / 20 [4864/7896]   minibatch loss: 0.01065
+2022-01-26 14:57:57,696 INFO     TRAINING. 	 Epoch 14 / 20 [6592/7896]   minibatch loss: 0.01432
+2022-01-26 14:57:59,977 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:58:00,742 INFO     TESTING VALIDATION SET. Epoch 14 [896/987]
+2022-01-26 14:58:00,820 INFO     >> FINISHED EPOCH IN: 15 secs
+2022-01-26 14:58:00,820 INFO     >> STARTING EPOCH 15
+2022-01-26 14:58:00,820 INFO     >> TIME ELAPSED SO FAR:	03 mins, 32 secs
+2022-01-26 14:58:00,820 INFO     >> EST. TIME REMAINING:	01 mins, 29 secs
+2022-01-26 14:58:03,835 INFO     TRAINING. 	 Epoch 15 / 20 [1664/7896]   minibatch loss: 0.01308
+2022-01-26 14:58:06,944 INFO     TRAINING. 	 Epoch 15 / 20 [3392/7896]   minibatch loss: 0.01170
+2022-01-26 14:58:10,006 INFO     TRAINING. 	 Epoch 15 / 20 [5120/7896]   minibatch loss: 0.01358
+2022-01-26 14:58:13,037 INFO     TRAINING. 	 Epoch 15 / 20 [6784/7896]   minibatch loss: 0.01060
+2022-01-26 14:58:15,005 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:58:15,801 INFO     >> FINISHED EPOCH IN: 15 secs
+2022-01-26 14:58:15,801 INFO     >> VALIDATION LOSS IS BEST SO FAR, SAVING WEIGHTS TO C:\Users\dailyuser\git-repos\gerbilizer\trained_models\aramis_100ms\00016\best_weights.pt
+2022-01-26 14:58:15,817 INFO     >> STARTING EPOCH 16
+2022-01-26 14:58:15,817 INFO     >> TIME ELAPSED SO FAR:	03 mins, 47 secs
+2022-01-26 14:58:15,817 INFO     >> EST. TIME REMAINING:	01 mins, 15 secs
+2022-01-26 14:58:16,051 INFO     TRAINING. 	 Epoch 16 / 20 [128/7896]   minibatch loss: 0.01575
+2022-01-26 14:58:19,160 INFO     TRAINING. 	 Epoch 16 / 20 [1856/7896]   minibatch loss: 0.01350
+2022-01-26 14:58:22,260 INFO     TRAINING. 	 Epoch 16 / 20 [3584/7896]   minibatch loss: 0.01101
+2022-01-26 14:58:25,338 INFO     TRAINING. 	 Epoch 16 / 20 [5312/7896]   minibatch loss: 0.01148
+2022-01-26 14:58:28,368 INFO     TRAINING. 	 Epoch 16 / 20 [6976/7896]   minibatch loss: 0.01122
+2022-01-26 14:58:29,993 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:58:30,821 INFO     >> FINISHED EPOCH IN: 15 secs
+2022-01-26 14:58:30,821 INFO     >> VALIDATION LOSS IS BEST SO FAR, SAVING WEIGHTS TO C:\Users\dailyuser\git-repos\gerbilizer\trained_models\aramis_100ms\00016\best_weights.pt
+2022-01-26 14:58:30,821 INFO     >> STARTING EPOCH 17
+2022-01-26 14:58:30,821 INFO     >> TIME ELAPSED SO FAR:	04 mins, 02 secs
+2022-01-26 14:58:30,821 INFO     >> EST. TIME REMAINING:	01 mins, 00 secs
+2022-01-26 14:58:31,383 INFO     TRAINING. 	 Epoch 17 / 20 [320/7896]   minibatch loss: 0.00997
+2022-01-26 14:58:34,461 INFO     TRAINING. 	 Epoch 17 / 20 [2048/7896]   minibatch loss: 0.01130
+2022-01-26 14:58:37,569 INFO     TRAINING. 	 Epoch 17 / 20 [3776/7896]   minibatch loss: 0.01127
+2022-01-26 14:58:40,678 INFO     TRAINING. 	 Epoch 17 / 20 [5504/7896]   minibatch loss: 0.01261
+2022-01-26 14:58:43,693 INFO     TRAINING. 	 Epoch 17 / 20 [7168/7896]   minibatch loss: 0.01366
+2022-01-26 14:58:44,958 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:58:45,802 INFO     >> FINISHED EPOCH IN: 15 secs
+2022-01-26 14:58:45,802 INFO     >> VALIDATION LOSS IS BEST SO FAR, SAVING WEIGHTS TO C:\Users\dailyuser\git-repos\gerbilizer\trained_models\aramis_100ms\00016\best_weights.pt
+2022-01-26 14:58:45,817 INFO     >> STARTING EPOCH 18
+2022-01-26 14:58:45,817 INFO     >> TIME ELAPSED SO FAR:	04 mins, 17 secs
+2022-01-26 14:58:45,817 INFO     >> EST. TIME REMAINING:	45 secs
+2022-01-26 14:58:46,723 INFO     TRAINING. 	 Epoch 18 / 20 [512/7896]   minibatch loss: 0.01327
+2022-01-26 14:58:49,738 INFO     TRAINING. 	 Epoch 18 / 20 [2176/7896]   minibatch loss: 0.01016
+2022-01-26 14:58:52,823 INFO     TRAINING. 	 Epoch 18 / 20 [3904/7896]   minibatch loss: 0.01241
+2022-01-26 14:58:55,932 INFO     TRAINING. 	 Epoch 18 / 20 [5632/7896]   minibatch loss: 0.01010
+2022-01-26 14:58:59,009 INFO     TRAINING. 	 Epoch 18 / 20 [7360/7896]   minibatch loss: 0.00984
+2022-01-26 14:58:59,931 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:59:00,743 INFO     >> FINISHED EPOCH IN: 15 secs
+2022-01-26 14:59:00,743 INFO     >> STARTING EPOCH 19
+2022-01-26 14:59:00,743 INFO     >> TIME ELAPSED SO FAR:	04 mins, 32 secs
+2022-01-26 14:59:00,743 INFO     >> EST. TIME REMAINING:	30 secs
+2022-01-26 14:59:02,118 INFO     TRAINING. 	 Epoch 19 / 20 [768/7896]   minibatch loss: 0.01245
+2022-01-26 14:59:05,227 INFO     TRAINING. 	 Epoch 19 / 20 [2496/7896]   minibatch loss: 0.01161
+2022-01-26 14:59:08,320 INFO     TRAINING. 	 Epoch 19 / 20 [4224/7896]   minibatch loss: 0.01103
+2022-01-26 14:59:11,397 INFO     TRAINING. 	 Epoch 19 / 20 [5952/7896]   minibatch loss: 0.01019
+2022-01-26 14:59:14,459 INFO     TRAINING. 	 Epoch 19 / 20 [7680/7896]   minibatch loss: 0.01322
+2022-01-26 14:59:14,802 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:59:15,599 INFO     >> FINISHED EPOCH IN: 15 secs
+2022-01-26 14:59:15,599 INFO     >> STARTING EPOCH 20
+2022-01-26 14:59:15,599 INFO     >> TIME ELAPSED SO FAR:	04 mins, 47 secs
+2022-01-26 14:59:15,599 INFO     >> EST. TIME REMAINING:	15 secs
+2022-01-26 14:59:17,536 INFO     TRAINING. 	 Epoch 20 / 20 [1088/7896]   minibatch loss: 0.00878
+2022-01-26 14:59:20,590 INFO     TRAINING. 	 Epoch 20 / 20 [2816/7896]   minibatch loss: 0.01173
+2022-01-26 14:59:23,698 INFO     TRAINING. 	 Epoch 20 / 20 [4544/7896]   minibatch loss: 0.01171
+2022-01-26 14:59:26,760 INFO     TRAINING. 	 Epoch 20 / 20 [6272/7896]   minibatch loss: 0.00977
+2022-01-26 14:59:29,635 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-01-26 14:59:29,791 INFO     TESTING VALIDATION SET. Epoch 20 [192/987]
+2022-01-26 14:59:30,447 INFO     >> FINISHED EPOCH IN: 15 secs
+2022-01-26 14:59:30,447 INFO     >> VALIDATION LOSS IS BEST SO FAR, SAVING WEIGHTS TO C:\Users\dailyuser\git-repos\gerbilizer\trained_models\aramis_100ms\00016\best_weights.pt
+2022-01-26 14:59:30,447 INFO     >> FINISHED ALL EPOCHS. TOTAL TIME ELAPSED: 05 mins, 01 secs
+2022-01-26 14:59:30,447 INFO     >> SAVING FINAL MODEL WEIGHTS TO C:\Users\dailyuser\git-repos\gerbilizer\trained_models\aramis_100ms\00016\final_weights.pt
