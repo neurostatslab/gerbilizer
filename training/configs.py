@@ -154,6 +154,7 @@ def build_config(config_name, job_id):
 		"""
 		CONFIG = {
 			'ARCHITECTURE': 'GerbilizerRNNConv',
+			'DEVICE': 'GPU',
 
 			'NUM_SLEAP_KEYPOINTS': 1,
 			'USE_POOLING': False,
