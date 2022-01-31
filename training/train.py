@@ -184,6 +184,7 @@ for epochcount in range(CONFIG["NUM_EPOCHS"]):
         )
 
         # Compute loss.
+        locations = torch.mean(locations, axis=1)
         losses = loss_function(outputs, locations)
         mean_loss = torch.mean(losses)
 

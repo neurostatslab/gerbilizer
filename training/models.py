@@ -27,6 +27,8 @@ def build_model(CONFIG):
         model = GerbilizerDenseNet(CONFIG)
     elif CONFIG["ARCHITECTURE"] == "GerbilizerReLUDenseNet":
         model = GerbilizerDenseNet(CONFIG)
+    elif CONFIG["ARCHITECTURE"] == "GerbilizerRNNConv":
+        model = GerbilizerRNNConv(CONFIG)
     
     if CONFIG["DEVICE"] == "GPU":
         model = model.cuda()
@@ -137,3 +139,86 @@ class GerbilizerReLUDenseNet(torch.nn.Module):
         px = self.x_coord_readout(x.swapaxes(1, 2))
         py = self.y_coord_readout(x.swapaxes(1, 2))
         return torch.stack((px, py), dim=-1)
+
+
+class GerbilizerRNNConv(torch.nn.Module):
+    def __init__(self, CONFIG):
+        super(GerbilizerRNNConv, self).__init__()
+
+        # Currently, only capable of predicting one point
+        if CONFIG['NUM_SLEAP_KEYPOINTS'] != 1:
+            raise NotImplementedError('GerbilizerRNNConv does not support inference of multiple keypoints')
+        
+        # Create convolutional layers
+        self.conv_layers = torch.nn.ModuleList()
+        n_mics = CONFIG["NUM_MICROPHONES"]
+        in_channels = n_mics
+
+        n_layers = CONFIG['NUM_CONV_LAYERS']
+        input_len = CONFIG['INPUT_AUDIO_LEN']
+
+        for i in range(n_layers):
+            out_channels = CONFIG[f'NUM_CHANNELS_LAYER_{i + 1}']
+            kernel_size = CONFIG[f'FILTER_SIZE_LAYER_{i + 1}']
+            dilation = CONFIG[f'DILATION_LAYER_{i + 1}']
+            stride = CONFIG[f'STRIDE_LAYER_{i + 1}']
+            conv_layer = torch.nn.Conv1d(
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=kernel_size,
+                stride=stride,
+                dilation=dilation
+            )
+            self.conv_layers.append(conv_layer)
+            in_channels = out_channels
+        
+        if CONFIG['USE_POOLING']:
+            self.pooling_layer = torch.nn.MaxPool1d(
+                kernel_size=2,
+                stride=2
+            )
+        else:
+            self.pooling_layer = torch.nn.Identity()
+
+        # The number of 'features' seen by the RNN at each time step
+        # is equal to the number of channels we end up with after all
+        # convolutions
+        # Note that axes 1 and 2 will need to be swapped, as the RNN module
+        # expects input to have the shape (batch_size, seq_len, n_features)
+        n_rnn_features = in_channels
+        rnn_hidden_size = CONFIG['RNN_HIDDEN_SIZE']
+        n_rnn_layers = CONFIG['RNN_DEPTH']
+        is_bidirectional = CONFIG['RNN_IS_BIDIRECTIONAL']
+        dropout = CONFIG['RNN_DROPOUT_PROB']
+    
+        if CONFIG['RECURRENT_CELL_TYPE'] == 'RNN':
+            cell_type = torch.nn.RNN
+        elif CONFIG['RECURRENT_CELL_TYPE'] == 'GRU':
+            cell_type = torch.nn.GRU
+        elif CONFIG['RECURRENT_CELL_TYPE'] == 'LSTM':
+            cell_type = torch.nn.LSTM
+        else:
+            raise NotImplementedError(f'Unknown value {CONFIG["RECURRENT_CELL_TYPE"]} for recurrent cell type.')
+
+        self.recurrent_layer = cell_type(
+            input_size=n_rnn_features,
+            hidden_size=rnn_hidden_size,
+            num_layers=n_rnn_layers,
+            batch_first=True,
+            dropout=dropout,
+            bidirectional=is_bidirectional
+        )
+        # Reduce the hidden state to a coordinate prediction
+        self.feedforward = torch.nn.Linear(rnn_hidden_size * n_rnn_layers, 2)
+
+    def forward(self, x):
+        conv_result = x
+        for conv_layer in self.conv_layers:
+            conv_result = self.pooling_layer(conv_layer(conv_result))
+        # Swaps the signal_len and num_features dims
+        rnn_input = torch.transpose(conv_result, 1, 2)
+        # [0] because it returns a tuple of (outputs, hidden states)
+        rnn_output = self.recurrent_layer(rnn_input)[0]
+        # We only care about the prediction produced at the end of the sequence
+        final_output = rnn_output[:, -1, :]
+        return self.feedforward(final_output)

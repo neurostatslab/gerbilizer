@@ -39,6 +39,8 @@ def build_config(config_name, job_id):
 		"ARCHITECTURE": "GerbilizerDenseNet",
 		"USE_BATCH_NORM": False,
 
+		"NUM_CONV_LAYERS": 12,
+
 		"NUM_CHANNELS_LAYER_1": 11,
 		"NUM_CHANNELS_LAYER_2": 10,
 		"NUM_CHANNELS_LAYER_3": 10,
@@ -141,12 +143,37 @@ def build_config(config_name, job_id):
 			"WEIGHT_DECAY": np.power(10, log_weightdecay),  # between 1e-5 & 1e-3
 			"MIN_LEARNING_RATE": np.power(10, log_minlr)  # ^^^
 		}
+	elif config_name == "aramis_convrnn":
+		""" The largest difference in distance between the gerbil and any
+		two microphones is on the order of 0.5m, which is about the distance
+		traveled by a sound wave in 1.5ms. The smallest resolvable time (through
+		ILD) is 1/125000s, which corresponds to a distance difference of 2.8mm.
+		Theoretically, the prediction accuracy through ILD alone is bounded by
+		this distance multiplied by the product of the strides of all conv filters
+		(I think).
+		"""
+		CONFIG = {
+			'ARCHITECTURE': 'GerbilizerRNNConv',
 
+			'NUM_SLEAP_KEYPOINTS': 1,
+			'USE_POOLING': False,
+			'INPUT_AUDIO_LEN': int(125000 * 0.100),
+
+			'NUM_CONV_LAYERS': 1,
+			'NUM_CHANNELS_LAYER_1': 15,
+			'FILTER_SIZE_LAYER_1': int(125000 * 1e-3),  # 1ms
+			'STRIDE_LAYER_1': 2,
+			'DILATION_LAYER_1': 1,
+
+			'RECURRENT_CELL_TYPE': 'RNN',
+			'RNN_DEPTH': 1,
+			'RNN_IS_BIDIRECTIONAL': False,
+			'RNN_HIDDEN_SIZE': 64,
+			'RNN_DROPOUT_PROB': 0,
+		}
 	else:
-		raise ValueError(
-			f"'{config_name}' was not recognized as a "
-			"valid 'config_name' parameter."
-			)
+		print(f"'{config_name}' was not recognized as a "
+		"valid 'config_name' parameter.")
 
 	# Fill in any default values.
 	for key, value in DEFAULT_CONFIG.items():

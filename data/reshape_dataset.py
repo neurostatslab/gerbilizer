@@ -6,9 +6,9 @@ from tqdm import trange
 
 nt_new = 4
 random_state = np.random.RandomState(123)
-index_file_path = 'filtered_idx_notail.npy'
+index_file_path = 'filtered_idx_notail_100ms.npy'
 
-with h5py.File('preprocessed_vocalization_dataset_100ms.h5') as f_src:
+with h5py.File('vocalization_dataset_100ms.h5') as f_src:
 	# All vocalizations.
 	all_vocs = np.array(f_src["vocalizations"])
 	# Select only valid indices
@@ -30,21 +30,19 @@ with h5py.File('preprocessed_vocalization_dataset_100ms.h5') as f_src:
 	# Resample locations to 10 timepoints
 	# Quick and dirty slice to remove the tail position
 	# In the future, this feature will be likely be directly removed from the raw dataset
-	loc_src = np.array(f_src["locations"][..., :2, :])
+	loc_src = np.array(f_src["locations"][..., 0, :])
 	nt_old = loc_src.shape[1]
-	n_keypoints = loc_src.shape[2]
-	n_spatial_dims = loc_src.shape[3]
+	n_spatial_dims = loc_src.shape[-1]
 	all_locs = np.zeros(
-		(n_samples, nt_new, n_keypoints, n_spatial_dims)
+		(n_samples, nt_new, n_spatial_dims)
 	).astype("float32")
 	for i in trange(n_samples):
-		for j in range(n_keypoints):
-			for k in range(n_spatial_dims):
-				all_locs[i, :, j, k] = np.interp(
-					np.linspace(0, 1, nt_new),
-					np.linspace(0, 1, nt_old),
-					loc_src[i, :, j, k],
-				)
+		for k in range(n_spatial_dims):
+			all_locs[i, :, k] = np.interp(
+				np.linspace(0, 1, nt_new),
+				np.linspace(0, 1, nt_old),
+				loc_src[i, :, k],
+			)
 
 	# Save train set.
 	with h5py.File('train_set.h5','w') as f_dest:

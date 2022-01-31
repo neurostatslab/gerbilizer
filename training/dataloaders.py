@@ -60,13 +60,13 @@ class GerbilVocalizationDataset(Dataset):
         # With p = 0.5, flip vertically
         if self.flip_vert and np.random.binomial(1, 0.5):
             # Assumes the center of the enclosure is (0, 0)
-            locations[:, 1, :] *= -1
+            locations[:, 1] *= -1
             sound = sound[[3, 2, 1, 0]]
 
         # With p = 0.5, flip horizontally
         if self.flip_horiz and np.random.binomial(1, 0.5):
             # Assumes the center of the enclosure is (0, 0)
-            locations[:, 0, :] *= -1
+            locations[:, 0] *= -1
             sound = sound[[1, 0, 3, 2]]
 
         return sound, locations
