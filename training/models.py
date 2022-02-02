@@ -1,5 +1,8 @@
 import torch
 
+from convlstm import ConvLSTM
+
+
 def build_model(CONFIG):
     """
     Specifies model and loss funciton.
@@ -149,76 +152,65 @@ class GerbilizerRNNConv(torch.nn.Module):
         if CONFIG['NUM_SLEAP_KEYPOINTS'] != 1:
             raise NotImplementedError('GerbilizerRNNConv does not support inference of multiple keypoints')
         
-        # Create convolutional layers
-        self.conv_layers = torch.nn.ModuleList()
         n_mics = CONFIG["NUM_MICROPHONES"]
         in_channels = n_mics
 
-        n_layers = CONFIG['NUM_CONV_LAYERS']
-        input_len = CONFIG['INPUT_AUDIO_LEN']
-
-        for i in range(n_layers):
-            out_channels = CONFIG[f'NUM_CHANNELS_LAYER_{i + 1}']
-            kernel_size = CONFIG[f'FILTER_SIZE_LAYER_{i + 1}']
-            dilation = CONFIG[f'DILATION_LAYER_{i + 1}']
-            stride = CONFIG[f'STRIDE_LAYER_{i + 1}']
-            conv_layer = torch.nn.Conv1d(
-                in_channels=in_channels,
-                out_channels=out_channels,
-                kernel_size=kernel_size,
-                stride=stride,
-                dilation=dilation
-            )
-            self.conv_layers.append(conv_layer)
-            in_channels = out_channels
+        n_layers = CONFIG['RNN_DEPTH']
+        hidden_size = CONFIG['RNN_HIDDEN_SIZE']
         
-        if CONFIG['USE_POOLING']:
-            self.pooling_layer = torch.nn.MaxPool1d(
-                kernel_size=2,
-                stride=2
-            )
-        else:
-            self.pooling_layer = torch.nn.Identity()
+        kernel_width = CONFIG['RNN_CONV_KERNEL_WIDTH']
+        kernel_height = CONFIG['RNN_CONV_KERNEL_HEIGHT']
+        kernel_shape = (kernel_width, kernel_height)
 
-        # The number of 'features' seen by the RNN at each time step
-        # is equal to the number of channels we end up with after all
-        # convolutions
-        # Note that axes 1 and 2 will need to be swapped, as the RNN module
-        # expects input to have the shape (batch_size, seq_len, n_features)
-        n_rnn_features = in_channels
-        rnn_hidden_size = CONFIG['RNN_HIDDEN_SIZE']
-        n_rnn_layers = CONFIG['RNN_DEPTH']
-        is_bidirectional = CONFIG['RNN_IS_BIDIRECTIONAL']
-        dropout = CONFIG['RNN_DROPOUT_PROB']
-    
-        if CONFIG['RECURRENT_CELL_TYPE'] == 'RNN':
-            cell_type = torch.nn.RNN
-        elif CONFIG['RECURRENT_CELL_TYPE'] == 'GRU':
-            cell_type = torch.nn.GRU
-        elif CONFIG['RECURRENT_CELL_TYPE'] == 'LSTM':
-            cell_type = torch.nn.LSTM
-        else:
-            raise NotImplementedError(f'Unknown value {CONFIG["RECURRENT_CELL_TYPE"]} for recurrent cell type.')
-
-        self.recurrent_layer = cell_type(
-            input_size=n_rnn_features,
-            hidden_size=rnn_hidden_size,
-            num_layers=n_rnn_layers,
-            batch_first=True,
-            dropout=dropout,
-            bidirectional=is_bidirectional
+        self.conv_layer = ConvLSTM(
+            n_mics,
+            hidden_size,
+            kernel_shape,
+            n_layers,
+            batch_first=True
         )
-        # Reduce the hidden state to a coordinate prediction
-        self.feedforward = torch.nn.Linear(rnn_hidden_size * n_rnn_layers, 2)
 
-    def forward(self, x):
-        conv_result = x
-        for conv_layer in self.conv_layers:
-            conv_result = self.pooling_layer(conv_layer(conv_result))
-        # Swaps the signal_len and num_features dims
-        rnn_input = torch.transpose(conv_result, 1, 2)
-        # [0] because it returns a tuple of (outputs, hidden states)
-        rnn_output = self.recurrent_layer(rnn_input)[0]
-        # We only care about the prediction produced at the end of the sequence
-        final_output = rnn_output[:, -1, :]
-        return self.feedforward(final_output)
+        # 1x1 conv to act as a fc layer among hidden state dimension
+        self.nin_layer = torch.nn.Conv2d(
+            hidden_size, 
+            1,
+            (1, 1)
+        )
+
+        # TODO: add config entries for fc layer sizes and count
+        self.ff_layers = torch.nn.ModuleList()
+        self.ff_layers.append(torch.nn.Linear(129 * 2, 256))
+        self.ff_layers.append(torch.nn.Linear(256, 2))
+
+    def forward(self, x, lens):
+        """ Split the pack-padded batch into n samples, which are
+        computed individually and concatenated to the final output.
+        I think a better way to accomplish this would be to rewrite
+        the ConvLSTM class to support this functionality, but I don't
+        think that's worth doing before determining whether this
+        architecture works for us.
+        """
+        predictions = list()
+        for n, sample in enumerate(x):
+            # Remove padding and add fake batch dimension
+            fake_batch = torch.unsqueeze(sample[:lens[n], ...], 0)
+            # The second tuple element contains the hidden and cell states
+            conv_out, _ = self.conv_layer(fake_batch)
+            # I don't know why this returns a list
+            conv_out = conv_out[-1]
+            # Grab only the last iteration's hidden state
+            conv_out = conv_out[:, -1, ...]
+
+            # Evaluate FC NiN over the hidden state's dimension
+            linear_in = self.nin_layer(conv_out)
+
+            # Flatten and pass through FC layers
+            # Avoid flattening the batch dimension
+            linear_out = torch.flatten(linear_in, start_dim=1)
+
+            for fc_layer in self.ff_layers:
+                linear_out = fc_layer(linear_out)
+            
+            predictions.append(linear_out)
+        predictions = torch.cat(predictions, dim=0)
+        return predictions

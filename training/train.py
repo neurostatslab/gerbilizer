@@ -164,7 +164,12 @@ for epochcount in range(CONFIG["NUM_EPOCHS"]):
     # === TRAIN FOR ONE EPOCH === #
     progress.start_training()
     model.train()
-    for sounds, locations in traindata:
+    for minibatch in traindata:
+        if len(minibatch) == 3:
+                sounds, lens, locations = minibatch
+        else:
+            sounds, locations = minibatch
+            lens = None
 
         # Don't process partial batches.
         if len(sounds) != CONFIG["TRAIN_BATCH_SIZE"]:
@@ -179,12 +184,17 @@ for epochcount in range(CONFIG["NUM_EPOCHS"]):
         optimizer.zero_grad()
 
         # Forward pass, including data augmentation.
-        outputs = model(
-            augment(sounds, sample_rate=16000)
-        )
+        if lens is None:
+            outputs = model(
+                augment(sounds, sample_rate=125000)
+            )
+        else:
+            outputs = model(
+               sounds,
+               lens
+            )
 
         # Compute loss.
-        locations = torch.mean(locations, axis=1)
         losses = loss_function(outputs, locations)
         mean_loss = torch.mean(losses)
 
@@ -201,7 +211,12 @@ for epochcount in range(CONFIG["NUM_EPOCHS"]):
     progress.start_testing()
     model.eval()
     with torch.no_grad():
-        for sounds, locations in valdata:
+        for minibatch in valdata:
+            if len(minibatch) == 3:
+                sounds, lens, locations = minibatch
+            else:
+                sounds, locations = minibatch
+                lens = None
 
             # Move data to gpu
             if CONFIG["DEVICE"] == "GPU":
@@ -209,7 +224,10 @@ for epochcount in range(CONFIG["NUM_EPOCHS"]):
                 locations = locations.cuda()
 
             # Forward pass.
-            outputs = model(sounds)
+            if lens is None:
+                outputs = model(sounds)
+            else:
+                outputs = model(sounds, lens)
 
             # Compute loss.
             losses = loss_function(outputs, locations)

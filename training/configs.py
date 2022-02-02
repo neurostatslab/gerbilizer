@@ -157,20 +157,11 @@ def build_config(config_name, job_id):
 			'DEVICE': 'GPU',
 
 			'NUM_SLEAP_KEYPOINTS': 1,
-			'USE_POOLING': False,
-			'INPUT_AUDIO_LEN': int(125000 * 0.100),
 
-			'NUM_CONV_LAYERS': 1,
-			'NUM_CHANNELS_LAYER_1': 15,
-			'FILTER_SIZE_LAYER_1': int(125000 * 1e-3),  # 1ms
-			'STRIDE_LAYER_1': 2,
-			'DILATION_LAYER_1': 1,
-
-			'RECURRENT_CELL_TYPE': 'RNN',
-			'RNN_DEPTH': 1,
-			'RNN_IS_BIDIRECTIONAL': False,
+			'RNN_DEPTH': 3,
 			'RNN_HIDDEN_SIZE': 64,
-			'RNN_DROPOUT_PROB': 0,
+			'RNN_CONV_KERNEL_WIDTH': 5,
+			'RNN_CONV_KERNEL_HEIGHT': 1
 		}
 	else:
 		print(f"'{config_name}' was not recognized as a "
