@@ -1,6 +1,5 @@
 import torch
-
-from convlstm import ConvLSTM
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence, pad_sequence
 
 
 def build_model(CONFIG):
@@ -154,63 +153,111 @@ class GerbilizerRNNConv(torch.nn.Module):
         
         n_mics = CONFIG["NUM_MICROPHONES"]
         in_channels = n_mics
-
-        n_layers = CONFIG['RNN_DEPTH']
-        hidden_size = CONFIG['RNN_HIDDEN_SIZE']
         
-        kernel_width = CONFIG['RNN_CONV_KERNEL_WIDTH']
-        kernel_height = CONFIG['RNN_CONV_KERNEL_HEIGHT']
-        kernel_shape = (kernel_width, kernel_height)
-
-        self.conv_layer = ConvLSTM(
-            n_mics,
-            hidden_size,
-            kernel_shape,
-            n_layers,
-            batch_first=True
+        # TODO: Add configurable parameters
+        conv_layer_1 = torch.nn.Sequential(
+            torch.nn.Conv3d(
+                in_channels=1,
+                out_channels=64,
+                kernel_size=3
+            ),
+            torch.nn.ReLU(),
+            torch.nn.BatchNorm3d(num_features=64),
+            torch.nn.MaxPool3d(
+                kernel_size=(1, 1, 4),
+                stride=(1, 1, 4)
+            )
         )
 
-        # 1x1 conv to act as a fc layer among hidden state dimension
-        self.nin_layer = torch.nn.Conv2d(
-            hidden_size, 
-            1,
-            (1, 1)
+        conv_layer_2 = torch.nn.Sequential(
+            torch.nn.Conv3d(
+                in_channels=64,
+                out_channels=64,
+                kernel_size=3
+            ),
+            torch.nn.ReLU(),
+            torch.nn.BatchNorm3d(num_features=64),
+            torch.nn.MaxPool3d(
+                kernel_size=(1, 1, 4),
+                stride=(1, 1, 4)
+            )
         )
 
-        # TODO: add config entries for fc layer sizes and count
-        self.ff_layers = torch.nn.ModuleList()
-        self.ff_layers.append(torch.nn.Linear(129 * 2, 256))
-        self.ff_layers.append(torch.nn.Linear(256, 2))
+        conv_layer_3 = torch.nn.Sequential(
+            torch.nn.Conv3d(
+                in_channels=64,
+                out_channels=64,
+                kernel_size=3
+            ),
+            torch.nn.ReLU(),
+            torch.nn.BatchNorm3d(num_features=64),
+            torch.nn.MaxPool3d(
+                kernel_size=(1, 1, 2),
+                stride=(1, 1, 2)
+            )
+        )
 
-    def forward(self, x, lens):
-        """ Split the pack-padded batch into n samples, which are
-        computed individually and concatenated to the final output.
-        I think a better way to accomplish this would be to rewrite
-        the ConvLSTM class to support this functionality, but I don't
-        think that's worth doing before determining whether this
-        architecture works for us.
+        self.conv_layers = torch.nn.ModuleList([conv_layer_1, conv_layer_2, conv_layer_3])
+
+        self.recurrent_layer = torch.nn.LSTM(
+            input_size=768,
+            hidden_size=64,
+            num_layers=2,
+            batch_first=True,
+            dropout=0,
+            bidirectional=True
+        )
+
+        self.ff_layer = torch.nn.Sequential(
+            torch.nn.Linear(128, 128),
+            torch.nn.ReLU(),
+            torch.nn.Linear(128, 2)
+        )
+
+    def forward(self, packed_x):
+        """ Since the Conv2d class doesn't support packed sequences,
+        the sequences are unpacked before evaluation there, and repacked
+        again before enterring the recurrent layers.
+        This will be more effecient as the depth of the recurrent module
+        increases.
         """
-        predictions = list()
-        for n, sample in enumerate(x):
-            # Remove padding and add fake batch dimension
-            fake_batch = torch.unsqueeze(sample[:lens[n], ...], 0)
-            # The second tuple element contains the hidden and cell states
-            conv_out, _ = self.conv_layer(fake_batch)
-            # I don't know why this returns a list
-            conv_out = conv_out[-1]
-            # Grab only the last iteration's hidden state
-            conv_out = conv_out[:, -1, ...]
+        conv_outputs = list()
+        unpacked_x, lens = pad_packed_sequence(packed_x, batch_first=True)
 
-            # Evaluate FC NiN over the hidden state's dimension
-            linear_in = self.nin_layer(conv_out)
-
-            # Flatten and pass through FC layers
-            # Avoid flattening the batch dimension
-            linear_out = torch.flatten(linear_in, start_dim=1)
-
-            for fc_layer in self.ff_layers:
-                linear_out = fc_layer(linear_out)
+        conv_outputs = list()
+        for n, samp in enumerate(unpacked_x):
+            conv_out = samp[:lens[n]]
+            # Unsqueeze twice to create fake batch dim and channel dim
+            conv_out = torch.unsqueeze(conv_out, 0)
+            conv_out = torch.unsqueeze(conv_out, 0)
             
-            predictions.append(linear_out)
-        predictions = torch.cat(predictions, dim=0)
-        return predictions
+            for c_layer in self.conv_layers:
+                conv_out = c_layer(conv_out)
+            # Move the time dim to the front
+            conv_out = torch.transpose(conv_out, 0, 2)
+            # Flatten to create a shape that the LSTM module will accept
+            conv_out = torch.flatten(conv_out, start_dim=1)
+            conv_outputs.append(conv_out)
+        
+        # Repack for LSTM efficiency
+        pad_conv_outputs = pad_sequence(conv_outputs, batch_first=True)
+        conv_output_lens = [tensor.shape[0] for tensor in conv_outputs]
+        packed_conv_outputs = pack_padded_sequence(
+            pad_conv_outputs, 
+            conv_output_lens, 
+            batch_first=True, 
+            enforce_sorted=False
+        )
+
+        rec_out, _ = self.recurrent_layer(packed_conv_outputs)
+        # Unpack again and select the final hidden state for each input in the minibatch
+        unpacked_data, unpacked_lens = pad_packed_sequence(rec_out, batch_first=True)
+        last_hidden_states = unpacked_data[
+            torch.arange(unpacked_data.shape[0]),  # The length - 1 element is only relevant to the corresponding input's index
+            unpacked_lens - 1,  # Length - 1 to get the last element of the RNN chain
+            :  # every element of the hidden state
+        ]
+
+        # x-y coords of final prediction
+        lin_out = self.ff_layer(last_hidden_states)
+        return lin_out

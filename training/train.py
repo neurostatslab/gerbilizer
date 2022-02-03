@@ -113,7 +113,8 @@ def lr_schedule(epoch):
     """
     lm0 = CONFIG["MIN_LEARNING_RATE"]
     lm1 = CONFIG["MAX_LEARNING_RATE"]
-    f = epoch / CONFIG["NUM_EPOCHS"]
+    # f = epoch / CONFIG["NUM_EPOCHS"]
+    f = epoch / 50
     return (
         lm0 + 0.5 * (lm1 - lm0) * (1 + np.cos(f * np.pi))
     )
@@ -164,15 +165,9 @@ for epochcount in range(CONFIG["NUM_EPOCHS"]):
     # === TRAIN FOR ONE EPOCH === #
     progress.start_training()
     model.train()
-    for minibatch in traindata:
-        if len(minibatch) == 3:
-                sounds, lens, locations = minibatch
-        else:
-            sounds, locations = minibatch
-            lens = None
-
+    for sounds, locations in traindata:
         # Don't process partial batches.
-        if len(sounds) != CONFIG["TRAIN_BATCH_SIZE"]:
+        if len(locations) != CONFIG["TRAIN_BATCH_SIZE"]:
             break
 
         # Move data to gpu, if desired.
@@ -184,15 +179,12 @@ for epochcount in range(CONFIG["NUM_EPOCHS"]):
         optimizer.zero_grad()
 
         # Forward pass, including data augmentation.
-        if lens is None:
+        if isinstance(sounds, torch.Tensor):
             outputs = model(
                 augment(sounds, sample_rate=125000)
             )
         else:
-            outputs = model(
-               sounds,
-               lens
-            )
+            outputs = model(sounds)
 
         # Compute loss.
         losses = loss_function(outputs, locations)
@@ -211,23 +203,13 @@ for epochcount in range(CONFIG["NUM_EPOCHS"]):
     progress.start_testing()
     model.eval()
     with torch.no_grad():
-        for minibatch in valdata:
-            if len(minibatch) == 3:
-                sounds, lens, locations = minibatch
-            else:
-                sounds, locations = minibatch
-                lens = None
-
+        for sounds, locations in valdata:
             # Move data to gpu
             if CONFIG["DEVICE"] == "GPU":
                 sounds = sounds.cuda()
                 locations = locations.cuda()
 
-            # Forward pass.
-            if lens is None:
-                outputs = model(sounds)
-            else:
-                outputs = model(sounds, lens)
+            outputs = model(sounds)
 
             # Compute loss.
             losses = loss_function(outputs, locations)

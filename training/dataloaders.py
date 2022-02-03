@@ -7,7 +7,7 @@ import os
 import h5py
 import numpy as np
 import torch
-from torch.nn.utils.rnn import pad_sequence
+from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence
 from torch.utils.data import Dataset, DataLoader
 from scipy.interpolate import interp1d
 
@@ -124,13 +124,13 @@ class VarLenDataset(Dataset):
         if self.flip_vert and np.random.binomial(1, 0.5):
             # Assumes the center of the enclosure is (0, 0)
             locations[1] *= -1
-            stft_sound = stft_sound[:, [3, 2, 1, 0], ...]
+            stft_sound = stft_sound[:, [3, 2, 1, 0, 7, 6, 5, 4], ...]
 
         # With p = 0.5, flip horizontally
         if self.flip_horiz and np.random.binomial(1, 0.5):
             # Assumes the center of the enclosure is (0, 0)
             locations[0] *= -1
-            stft_sound = stft_sound[:, [1, 0, 3, 2], ...]
+            stft_sound = stft_sound[:, [1, 0, 3, 2, 5, 4, 7, 6], ...]
 
         return stft_sound, locations
     
@@ -141,14 +141,20 @@ class VarLenDataset(Dataset):
         sound_tensors = [torch.from_numpy(sound) for sound in sounds]
 
         padded_seq = pad_sequence(sound_tensors, batch_first=True)
+        packed_seq = pack_padded_sequence(
+            padded_seq,
+            lens,
+            batch_first=True,
+            enforce_sorted=False
+        )
         locations = torch.from_numpy(np.stack(locations, axis=0))
-        return padded_seq, lens, locations
+        return packed_seq, locations
 
 
 def build_dataloaders(path_to_data, CONFIG):
 
     # Construct Dataset objects.
-    if CONFIG['ARCHITECTURE'] != 'aramis_convrnn':
+    if CONFIG['ARCHITECTURE'] == 'GerbilizerRNNConv':
         traindata = VarLenDataset(
             os.path.join(path_to_data, "train_set.h5"),
             flip_vert=(CONFIG["AUGMENT_DATA"] and CONFIG["AUGMENT_FLIP_VERT"]),
@@ -178,28 +184,28 @@ def build_dataloaders(path_to_data, CONFIG):
             os.path.join(path_to_data, "test_set.h5"),
             flip_vert=False, flip_horiz=False
         )
-        
+
+    collate_fn = VarLenDataset.collate_batch if CONFIG['ARCHITECTURE'] == 'GerbilizerRNNConv' else None
 
     # Construct DataLoader objects.
     train_dataloader = DataLoader(
         traindata,
         batch_size=CONFIG["TRAIN_BATCH_SIZE"],
         shuffle=True,
-        collate_fn = VarLenDataset.collate_batch
+        collate_fn=collate_fn
     )
     val_dataloader = DataLoader(
         valdata,
         batch_size=CONFIG["VAL_BATCH_SIZE"],
         shuffle=True,
-        collate_fn = VarLenDataset.collate_batch
+        collate_fn=collate_fn
     )
     test_dataloader = DataLoader(
         testdata,
         batch_size=CONFIG["TEST_BATCH_SIZE"],
         shuffle=True,
-        collate_fn = VarLenDataset.collate_batch
+        collate_fn=collate_fn
     )
-
     return train_dataloader, val_dataloader, test_dataloader
 
 

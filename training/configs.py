@@ -155,13 +155,11 @@ def build_config(config_name, job_id):
 		CONFIG = {
 			'ARCHITECTURE': 'GerbilizerRNNConv',
 			'DEVICE': 'GPU',
-
 			'NUM_SLEAP_KEYPOINTS': 1,
-
-			'RNN_DEPTH': 3,
-			'RNN_HIDDEN_SIZE': 64,
-			'RNN_CONV_KERNEL_WIDTH': 5,
-			'RNN_CONV_KERNEL_HEIGHT': 1
+			'MAX_LEARNING_RATE': 0.1,
+			'MIN_LEARNING_RATE': 1e-5,
+			'NUM_EPOCHS': 300,
+			'TRAIN_BATCH_SIZE': 32
 		}
 	else:
 		print(f"'{config_name}' was not recognized as a "
