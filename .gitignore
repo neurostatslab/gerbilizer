@@ -5,6 +5,7 @@ __pycache__/
 # Data files
 *.h5
 *.npy
+*.joblib
 
 # Model weights
 *.pt

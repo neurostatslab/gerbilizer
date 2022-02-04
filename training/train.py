@@ -113,8 +113,7 @@ def lr_schedule(epoch):
     """
     lm0 = CONFIG["MIN_LEARNING_RATE"]
     lm1 = CONFIG["MAX_LEARNING_RATE"]
-    # f = epoch / CONFIG["NUM_EPOCHS"]
-    f = epoch / 50
+    f = epoch / CONFIG["NUM_EPOCHS"]
     return (
         lm0 + 0.5 * (lm1 - lm0) * (1 + np.cos(f * np.pi))
     )
@@ -192,6 +191,8 @@ for epochcount in range(CONFIG["NUM_EPOCHS"]):
 
         # Backwards pass.
         mean_loss.backward()
+        if CONFIG['ARCHITECTURE'] == 'GerbilizerRNNConv':
+            model.clip_gradients()
         optimizer.step()
 
         # Count batch as completed.

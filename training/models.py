@@ -1,3 +1,4 @@
+from unicodedata import bidirectional
 import torch
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence, pad_sequence
 
@@ -146,6 +147,7 @@ class GerbilizerReLUDenseNet(torch.nn.Module):
 class GerbilizerRNNConv(torch.nn.Module):
     def __init__(self, CONFIG):
         super(GerbilizerRNNConv, self).__init__()
+        self.config = CONFIG
 
         # Currently, only capable of predicting one point
         if CONFIG['NUM_SLEAP_KEYPOINTS'] != 1:
@@ -154,65 +156,61 @@ class GerbilizerRNNConv(torch.nn.Module):
         n_mics = CONFIG["NUM_MICROPHONES"]
         in_channels = n_mics
         
-        # TODO: Add configurable parameters
-        conv_layer_1 = torch.nn.Sequential(
-            torch.nn.Conv3d(
-                in_channels=1,
-                out_channels=32,
-                kernel_size=3
-            ),
-            torch.nn.ReLU(),
-            torch.nn.BatchNorm3d(num_features=32),
-            torch.nn.MaxPool3d(
-                kernel_size=(1, 1, 4),
-                stride=(1, 1, 4)
+        n_conv_blocks = CONFIG['NUM_CONV_BLOCKS']
+        self.conv_blocks = torch.nn.ModuleList()
+
+        for n in range(n_conv_blocks):
+            in_channels = CONFIG[f'CONV_BLOCK_{n+1}_IN_CHANNELS']
+            out_channels = CONFIG[f'CONV_BLOCK_{n+1}_OUT_CHANNELS']
+            kernel_size = CONFIG[f'CONV_BLOCK_{n+1}_KERNEL_SIZE']
+            mp_size = CONFIG[f'CONV_BLOCK_{n+1}_MAXPOOL_SIZE']
+            
+            conv_block = torch.nn.Sequential(
+                torch.nn.Conv2d(
+                    in_channels=in_channels,
+                    out_channels=out_channels,
+                    kernel_size=kernel_size,
+                    padding='same'
+                ),
+                torch.nn.ReLU(),
+                torch.nn.BatchNorm2d(num_features=out_channels),
+                torch.nn.MaxPool2d(
+                    kernel_size=(mp_size, 1),
+                    stride=(mp_size, 1)
+                )
             )
-        )
 
-        conv_layer_2 = torch.nn.Sequential(
-            torch.nn.Conv3d(
-                in_channels=32,
-                out_channels=16,
-                kernel_size=3
-            ),
-            torch.nn.ReLU(),
-            torch.nn.BatchNorm3d(num_features=16),
-            torch.nn.MaxPool3d(
-                kernel_size=(1, 1, 4),
-                stride=(1, 1, 4)
-            )
-        )
-
-        conv_layer_3 = torch.nn.Sequential(
-            torch.nn.Conv3d(
-                in_channels=16,
-                out_channels=16,
-                kernel_size=3
-            ),
-            torch.nn.ReLU(),
-            torch.nn.BatchNorm3d(num_features=16),
-            torch.nn.MaxPool3d(
-                kernel_size=(1, 1, 2),
-                stride=(1, 1, 2)
-            )
-        )
-
-        self.conv_layers = torch.nn.ModuleList([conv_layer_1, conv_layer_2, conv_layer_3])
-
-        self.recurrent_layer = torch.nn.LSTM(
-            input_size=192,
-            hidden_size=128,
-            num_layers=3,
+            self.conv_blocks.append(conv_block)
+        
+        rec_input_size = CONFIG['RECURRENT_INPUT_SIZE']
+        rec_layer_depth = CONFIG['RECURRENT_LAYER_DEPTH']
+        rec_hidden_size = CONFIG['RECURRENT_HIDDEN_SIZE']
+        rec_dropout = 0.5 if CONFIG['RECURRENT_USE_DROPOUT'] else 0
+        rec_type = torch.nn.GRU if CONFIG['RECURRENT_LAYER_TYPE'] == 'GRU' else torch.nn.LSTM
+        self.recurrent_layer = rec_type(
+            input_size=rec_input_size,
+            hidden_size=rec_hidden_size,
+            num_layers=rec_layer_depth,
+            dropout=rec_dropout,
             batch_first=True,
-            dropout=0.5,
             bidirectional=True
         )
 
+        ff_hidden_size = CONFIG['FC_HIDDEN_SIZE']
         self.ff_layer = torch.nn.Sequential(
-            torch.nn.Linear(256, 256),
-            torch.nn.Dropout(0.5),
+            torch.nn.Linear(2 * rec_hidden_size, ff_hidden_size),
             torch.nn.ReLU(),
-            torch.nn.Linear(256, 2)
+            torch.nn.Linear(ff_hidden_size, 2)
+        )
+    
+    def clip_gradients(self):
+        if not self.config['SHOULD_CLIP_RECURRENT_GRAD']:
+            return
+        max_norm = self.config['RECURRENT_MAX_GRAD_NORM']
+        torch.nn.utils.clip_grad_norm_(
+            self.recurrent_layer.parameters(),
+            max_norm=max_norm,
+            error_if_nonfinite=True  # No point in continuing if the grad is inf
         )
 
     def forward(self, packed_x):
@@ -222,31 +220,33 @@ class GerbilizerRNNConv(torch.nn.Module):
         This will be more effecient as the depth of the recurrent module
         increases.
         """
-        conv_outputs = list()
         unpacked_x, lens = pad_packed_sequence(packed_x, batch_first=True)
-
         conv_outputs = list()
+
         for n, samp in enumerate(unpacked_x):
             conv_out = samp[:lens[n]]
-            # Unsqueeze twice to create fake batch dim and channel dim
+            # Unsqueeze to create fake batch dim
             conv_out = torch.unsqueeze(conv_out, 0)
-            conv_out = torch.unsqueeze(conv_out, 0)
+            # Move the mag/phase axis to the front (to act as a channel dim in the conv. layer)
+            conv_out = torch.transpose(conv_out, 1, 3)
             
-            for c_layer in self.conv_layers:
-                conv_out = c_layer(conv_out)
-            # Move the time dim to the front
-            conv_out = torch.transpose(conv_out, 0, 2)
+            for c_block in self.conv_blocks:
+                conv_out = c_block(conv_out)
+            
+            # Move the time dim (variable length) to the front
+            conv_out = torch.transpose(conv_out, 0, 3)
             # Flatten to create a shape that the LSTM module will accept
             conv_out = torch.flatten(conv_out, start_dim=1)
+            # The shape should now be (L, n_conv_filters * 2) depending on the sizes of the maxpool filters
             conv_outputs.append(conv_out)
         
         # Repack for LSTM efficiency
         pad_conv_outputs = pad_sequence(conv_outputs, batch_first=True)
         conv_output_lens = [tensor.shape[0] for tensor in conv_outputs]
         packed_conv_outputs = pack_padded_sequence(
-            pad_conv_outputs, 
-            conv_output_lens, 
-            batch_first=True, 
+            pad_conv_outputs,
+            conv_output_lens,
+            batch_first=True,
             enforce_sorted=False
         )
 

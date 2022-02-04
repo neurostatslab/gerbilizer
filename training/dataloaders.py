@@ -127,13 +127,13 @@ class VarLenDataset(Dataset):
         if self.flip_vert and np.random.binomial(1, 0.5):
             # Assumes the center of the enclosure is (0, 0)
             locations[1] *= -1
-            stft_sound = stft_sound[:, [3, 2, 1, 0, 7, 6, 5, 4], ...]
+            stft_sound = stft_sound[..., [3, 2, 1, 0, 7, 6, 5, 4]]
 
         # With p = 0.5, flip horizontally
         if self.flip_horiz and np.random.binomial(1, 0.5):
             # Assumes the center of the enclosure is (0, 0)
             locations[0] *= -1
-            stft_sound = stft_sound[:, [1, 0, 3, 2, 5, 4, 7, 6], ...]
+            stft_sound = stft_sound[..., [1, 0, 3, 2, 5, 4, 7, 6]]
 
         return stft_sound, self.output_scaler.transform(locations.reshape((-1, 2))).flatten()
     
