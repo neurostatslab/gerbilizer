@@ -158,10 +158,12 @@ def build_config(config_name, job_id):
 			'NUM_SLEAP_KEYPOINTS': 1,
 			'MAX_LEARNING_RATE': 1e-2,
 			'MIN_LEARNING_RATE': 1e-5,
-			'NUM_EPOCHS': 50,
+			'NUM_EPOCHS': 120,
 			'TRAIN_BATCH_SIZE': 32,
 			'WEIGHT_DECAY': 0,
-			'MOMENTUM': 0,
+			
+			'ADAM_BETA_1': 0.9,
+			'ADAM_BETA_2': 0.999,
 
 			'NUM_CONV_BLOCKS': 3,
 
@@ -182,13 +184,14 @@ def build_config(config_name, job_id):
 
 			'RECURRENT_INPUT_SIZE': 128,
 			'RECURRENT_LAYER_DEPTH': 2,
-			'RECURRENT_HIDDEN_SIZE': 64,
+			'RECURRENT_HIDDEN_SIZE': 128,
 			'RECURRENT_USE_DROPOUT': False,
 			'RECURRENT_LAYER_TYPE': 'GRU',
 			'SHOULD_CLIP_RECURRENT_GRAD': True,
-			'RECURRENT_MAX_GRAD_NORM': 0.5,
+			'RECURRENT_MAX_GRAD_NORM': 0.25,
 
-			'FC_HIDDEN_SIZE': 128
+			'FC_HIDDEN_SIZE': 256,
+			'FC_USE_DROPOUT': True
 		}
 	else:
 		print(f"'{config_name}' was not recognized as a "

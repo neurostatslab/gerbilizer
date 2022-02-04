@@ -98,11 +98,21 @@ logging.info(model.__repr__())
 logging.info(f"Model device: {next(model.parameters()).device.__repr__()}")
 
 # Specify optimizer.
-optimizer = torch.optim.SGD(
+"""optimizer = torch.optim.SGD(
     model.parameters(),
     lr=0.0, # this is set manually at the start of each epoch.
     momentum=CONFIG["MOMENTUM"],
     weight_decay=CONFIG["WEIGHT_DECAY"]
+)"""
+
+optimizer = torch.optim.Adam(
+    model.parameters(),
+    lr=0,
+    betas=(
+        CONFIG['ADAM_BETA_1'],
+        CONFIG['ADAM_BETA_2']
+    ),
+    weight_decay=CONFIG['WEIGHT_DECAY']
 )
 
 # Cosine annealing learning rate decay.

@@ -145,6 +145,10 @@ class GerbilizerReLUDenseNet(torch.nn.Module):
 
 
 class GerbilizerRNNConv(torch.nn.Module):
+    """ This version is based on the model introduced in the paper
+    "Sound Event Localization and Detection of Overlapping Sources
+    Using Convolutional Recurrent Neural Networks", Adavanne et al.
+    """
     def __init__(self, CONFIG):
         super(GerbilizerRNNConv, self).__init__()
         self.config = CONFIG
@@ -197,8 +201,10 @@ class GerbilizerRNNConv(torch.nn.Module):
         )
 
         ff_hidden_size = CONFIG['FC_HIDDEN_SIZE']
+        ff_use_dropout = CONFIG['FC_USE_DROPOUT']
         self.ff_layer = torch.nn.Sequential(
             torch.nn.Linear(2 * rec_hidden_size, ff_hidden_size),
+            (torch.nn.Dropout(0.5) if ff_use_dropout else torch.nn.Identity()),
             torch.nn.ReLU(),
             torch.nn.Linear(ff_hidden_size, 2)
         )
