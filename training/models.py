@@ -158,11 +158,11 @@ class GerbilizerRNNConv(torch.nn.Module):
         conv_layer_1 = torch.nn.Sequential(
             torch.nn.Conv3d(
                 in_channels=1,
-                out_channels=64,
+                out_channels=32,
                 kernel_size=3
             ),
             torch.nn.ReLU(),
-            torch.nn.BatchNorm3d(num_features=64),
+            torch.nn.BatchNorm3d(num_features=32),
             torch.nn.MaxPool3d(
                 kernel_size=(1, 1, 4),
                 stride=(1, 1, 4)
@@ -171,12 +171,12 @@ class GerbilizerRNNConv(torch.nn.Module):
 
         conv_layer_2 = torch.nn.Sequential(
             torch.nn.Conv3d(
-                in_channels=64,
-                out_channels=64,
+                in_channels=32,
+                out_channels=16,
                 kernel_size=3
             ),
             torch.nn.ReLU(),
-            torch.nn.BatchNorm3d(num_features=64),
+            torch.nn.BatchNorm3d(num_features=16),
             torch.nn.MaxPool3d(
                 kernel_size=(1, 1, 4),
                 stride=(1, 1, 4)
@@ -185,12 +185,12 @@ class GerbilizerRNNConv(torch.nn.Module):
 
         conv_layer_3 = torch.nn.Sequential(
             torch.nn.Conv3d(
-                in_channels=64,
-                out_channels=64,
+                in_channels=16,
+                out_channels=16,
                 kernel_size=3
             ),
             torch.nn.ReLU(),
-            torch.nn.BatchNorm3d(num_features=64),
+            torch.nn.BatchNorm3d(num_features=16),
             torch.nn.MaxPool3d(
                 kernel_size=(1, 1, 2),
                 stride=(1, 1, 2)
@@ -200,18 +200,19 @@ class GerbilizerRNNConv(torch.nn.Module):
         self.conv_layers = torch.nn.ModuleList([conv_layer_1, conv_layer_2, conv_layer_3])
 
         self.recurrent_layer = torch.nn.LSTM(
-            input_size=768,
-            hidden_size=64,
-            num_layers=2,
+            input_size=192,
+            hidden_size=128,
+            num_layers=3,
             batch_first=True,
-            dropout=0,
+            dropout=0.5,
             bidirectional=True
         )
 
         self.ff_layer = torch.nn.Sequential(
-            torch.nn.Linear(128, 128),
+            torch.nn.Linear(256, 256),
+            torch.nn.Dropout(0.5),
             torch.nn.ReLU(),
-            torch.nn.Linear(128, 2)
+            torch.nn.Linear(256, 2)
         )
 
     def forward(self, packed_x):

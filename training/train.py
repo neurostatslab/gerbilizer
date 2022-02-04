@@ -18,7 +18,7 @@ from logger import ProgressLogger
 
 parser = argparse.ArgumentParser()
 base_dir = os.path.abspath(
-    os.path.join(os.path.dirname(__file__),"..")
+    os.path.join(os.path.dirname(__file__), "..")
 )
 
 parser.add_argument(

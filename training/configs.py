@@ -158,8 +158,10 @@ def build_config(config_name, job_id):
 			'NUM_SLEAP_KEYPOINTS': 1,
 			'MAX_LEARNING_RATE': 0.1,
 			'MIN_LEARNING_RATE': 1e-5,
-			'NUM_EPOCHS': 300,
-			'TRAIN_BATCH_SIZE': 32
+			'NUM_EPOCHS': 50,
+			'TRAIN_BATCH_SIZE': 16,
+			'WEIGHT_DECAY': 1e-5,
+			'MOMENTUM': 0.9
 		}
 	else:
 		print(f"'{config_name}' was not recognized as a "
