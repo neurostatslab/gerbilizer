@@ -1,0 +1,219 @@
+2022-02-04 13:57:38,542 INFO     Wrote config.txt file
+2022-02-04 13:57:40,641 INFO     GerbilizerRNNConv(
+  (conv_blocks): ModuleList(
+    (0): Sequential(
+      (0): Conv2d(8, 32, kernel_size=(3, 3), stride=(1, 1), padding=same)
+      (1): ReLU()
+      (2): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (3): MaxPool2d(kernel_size=(4, 1), stride=(4, 1), padding=0, dilation=1, ceil_mode=False)
+    )
+    (1): Sequential(
+      (0): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=same)
+      (1): ReLU()
+      (2): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (3): MaxPool2d(kernel_size=(2, 1), stride=(2, 1), padding=0, dilation=1, ceil_mode=False)
+    )
+    (2): Sequential(
+      (0): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=same)
+      (1): ReLU()
+      (2): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (3): MaxPool2d(kernel_size=(2, 1), stride=(2, 1), padding=0, dilation=1, ceil_mode=False)
+    )
+    (3): Sequential(
+      (0): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=same)
+      (1): ReLU()
+      (2): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (3): MaxPool2d(kernel_size=(2, 1), stride=(2, 1), padding=0, dilation=1, ceil_mode=False)
+    )
+    (4): Sequential(
+      (0): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=same)
+      (1): ReLU()
+      (2): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (3): MaxPool2d(kernel_size=(2, 1), stride=(2, 1), padding=0, dilation=1, ceil_mode=False)
+    )
+  )
+  (recurrent_layer): GRU(128, 64, num_layers=2, batch_first=True, dropout=0.5, bidirectional=True)
+  (ff_layer): Sequential(
+    (0): Linear(in_features=128, out_features=128, bias=True)
+    (1): Dropout(p=0.5, inplace=False)
+    (2): ReLU()
+    (3): Linear(in_features=128, out_features=2, bias=True)
+    (4): Sigmoid()
+  )
+)
+2022-02-04 13:57:40,641 INFO     Model device: device(type='cuda', index=0)
+2022-02-04 13:57:40,646 INFO     Training set:   <dataloaders.VarLenDataset object at 0x00000223506BB160>
+2022-02-04 13:57:40,646 INFO     Validation set:   <dataloaders.VarLenDataset object at 0x00000223506BB340>
+2022-02-04 13:57:40,646 INFO     Test set:   <dataloaders.VarLenDataset object at 0x00000223506BB460>
+2022-02-04 13:57:40,646 INFO      ==== STARTING TRAINING ====
+
+2022-02-04 13:57:40,646 INFO     >> SAVING INITIAL MODEL WEIGHTS TO C:\Users\dailyuser\git-repos\gerbilizer\trained_models\aramis_convrnn\00035\init_weights.pt
+2022-02-04 13:57:40,652 INFO     >> STARTING EPOCH 1
+2022-02-04 13:57:42,355 INFO     TRAINING. 	 Epoch 1 / 120 [4/1790]   minibatch loss: 0.17463
+2022-02-04 13:57:45,386 INFO     TRAINING. 	 Epoch 1 / 120 [172/1790]   minibatch loss: 0.18119
+2022-02-04 13:57:48,401 INFO     TRAINING. 	 Epoch 1 / 120 [352/1790]   minibatch loss: 0.13430
+2022-02-04 13:57:49,933 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 13:57:50,792 INFO     >> FINISHED EPOCH IN: 10 secs
+2022-02-04 13:57:50,792 INFO     >> VALIDATION LOSS IS BEST SO FAR, SAVING WEIGHTS TO C:\Users\dailyuser\git-repos\gerbilizer\trained_models\aramis_convrnn\00035\best_weights.pt
+2022-02-04 13:57:50,792 INFO     >> STARTING EPOCH 2
+2022-02-04 13:57:50,792 INFO     >> TIME ELAPSED SO FAR:	10 secs
+2022-02-04 13:57:50,792 INFO     >> EST. TIME REMAINING:	01 hours, 41 mins, 21 secs
+2022-02-04 13:57:51,421 INFO     TRAINING. 	 Epoch 2 / 120 [36/1790]   minibatch loss: 0.14929
+2022-02-04 13:57:54,425 INFO     TRAINING. 	 Epoch 2 / 120 [208/1790]   minibatch loss: 0.13858
+2022-02-04 13:57:57,464 INFO     TRAINING. 	 Epoch 2 / 120 [376/1790]   minibatch loss: 0.14247
+2022-02-04 13:57:58,651 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 13:57:59,560 INFO     >> FINISHED EPOCH IN: 09 secs
+2022-02-04 13:57:59,560 INFO     >> STARTING EPOCH 3
+2022-02-04 13:57:59,561 INFO     >> TIME ELAPSED SO FAR:	19 secs
+2022-02-04 13:57:59,561 INFO     >> EST. TIME REMAINING:	01 hours, 30 mins, 47 secs
+2022-02-04 13:58:00,527 INFO     TRAINING. 	 Epoch 3 / 120 [56/1790]   minibatch loss: 0.14881
+2022-02-04 13:58:03,573 INFO     TRAINING. 	 Epoch 3 / 120 [224/1790]   minibatch loss: 0.08973
+2022-02-04 13:58:06,636 INFO     TRAINING. 	 Epoch 3 / 120 [400/1790]   minibatch loss: 0.09228
+2022-02-04 13:58:07,339 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 13:58:08,276 INFO     >> FINISHED EPOCH IN: 09 secs
+2022-02-04 13:58:08,277 INFO     >> STARTING EPOCH 4
+2022-02-04 13:58:08,278 INFO     >> TIME ELAPSED SO FAR:	28 secs
+2022-02-04 13:58:08,278 INFO     >> EST. TIME REMAINING:	01 hours, 30 mins, 23 secs
+2022-02-04 13:58:09,707 INFO     TRAINING. 	 Epoch 4 / 120 [80/1790]   minibatch loss: 0.10875
+2022-02-04 13:58:12,761 INFO     TRAINING. 	 Epoch 4 / 120 [260/1790]   minibatch loss: 0.06471
+2022-02-04 13:58:15,807 INFO     TRAINING. 	 Epoch 4 / 120 [444/1790]   minibatch loss: 0.08904
+2022-02-04 13:58:15,823 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 13:58:16,667 INFO     >> FINISHED EPOCH IN: 08 secs
+2022-02-04 13:58:16,667 INFO     >> STARTING EPOCH 5
+2022-02-04 13:58:16,667 INFO     >> TIME ELAPSED SO FAR:	36 secs
+2022-02-04 13:58:16,667 INFO     >> EST. TIME REMAINING:	01 hours, 24 mins, 48 secs
+2022-02-04 13:58:18,839 INFO     TRAINING. 	 Epoch 5 / 120 [124/1790]   minibatch loss: 0.07295
+2022-02-04 13:58:21,886 INFO     TRAINING. 	 Epoch 5 / 120 [300/1790]   minibatch loss: 0.07785
+2022-02-04 13:58:24,573 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 13:58:24,991 INFO     TESTING VALIDATION SET. Epoch 5 [12/448]
+2022-02-04 13:58:25,508 INFO     >> FINISHED EPOCH IN: 09 secs
+2022-02-04 13:58:25,509 INFO     >> STARTING EPOCH 6
+2022-02-04 13:58:25,509 INFO     >> TIME ELAPSED SO FAR:	45 secs
+2022-02-04 13:58:25,509 INFO     >> EST. TIME REMAINING:	01 hours, 29 mins, 39 secs
+2022-02-04 13:58:28,017 INFO     TRAINING. 	 Epoch 6 / 120 [140/1790]   minibatch loss: 0.03734
+2022-02-04 13:58:31,058 INFO     TRAINING. 	 Epoch 6 / 120 [308/1790]   minibatch loss: 0.09533
+2022-02-04 13:58:33,549 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 13:58:34,114 INFO     TESTING VALIDATION SET. Epoch 6 [16/448]
+2022-02-04 13:58:34,568 INFO     >> FINISHED EPOCH IN: 09 secs
+2022-02-04 13:58:34,569 INFO     >> STARTING EPOCH 7
+2022-02-04 13:58:34,569 INFO     >> TIME ELAPSED SO FAR:	54 secs
+2022-02-04 13:58:34,569 INFO     >> EST. TIME REMAINING:	01 hours, 32 mins, 26 secs
+2022-02-04 13:58:37,167 INFO     TRAINING. 	 Epoch 7 / 120 [144/1790]   minibatch loss: 0.06042
+2022-02-04 13:58:40,198 INFO     TRAINING. 	 Epoch 7 / 120 [324/1790]   minibatch loss: 0.04065
+2022-02-04 13:58:42,284 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 13:58:43,151 INFO     >> FINISHED EPOCH IN: 09 secs
+2022-02-04 13:58:43,151 INFO     >> STARTING EPOCH 8
+2022-02-04 13:58:43,151 INFO     >> TIME ELAPSED SO FAR:	01 mins, 03 secs
+2022-02-04 13:58:43,151 INFO     >> EST. TIME REMAINING:	01 hours, 24 mins, 36 secs
+2022-02-04 13:58:43,237 INFO     TRAINING. 	 Epoch 8 / 120 [4/1790]   minibatch loss: 0.03827
+2022-02-04 13:58:46,281 INFO     TRAINING. 	 Epoch 8 / 120 [160/1790]   minibatch loss: 0.04267
+2022-02-04 13:58:49,296 INFO     TRAINING. 	 Epoch 8 / 120 [332/1790]   minibatch loss: 0.04305
+2022-02-04 13:58:51,214 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 13:58:52,068 INFO     >> FINISHED EPOCH IN: 09 secs
+2022-02-04 13:58:52,069 INFO     >> STARTING EPOCH 9
+2022-02-04 13:58:52,069 INFO     >> TIME ELAPSED SO FAR:	01 mins, 11 secs
+2022-02-04 13:58:52,069 INFO     >> EST. TIME REMAINING:	01 hours, 26 mins, 05 secs
+2022-02-04 13:58:52,335 INFO     TRAINING. 	 Epoch 9 / 120 [16/1790]   minibatch loss: 0.03918
+2022-02-04 13:58:55,339 INFO     TRAINING. 	 Epoch 9 / 120 [188/1790]   minibatch loss: 0.03090
+2022-02-04 13:58:58,339 INFO     TRAINING. 	 Epoch 9 / 120 [364/1790]   minibatch loss: 0.04496
+2022-02-04 13:58:59,699 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 13:59:00,620 INFO     >> FINISHED EPOCH IN: 09 secs
+2022-02-04 13:59:00,620 INFO     >> STARTING EPOCH 10
+2022-02-04 13:59:00,620 INFO     >> TIME ELAPSED SO FAR:	01 mins, 20 secs
+2022-02-04 13:59:00,620 INFO     >> EST. TIME REMAINING:	01 hours, 24 mins, 07 secs
+2022-02-04 13:59:01,341 INFO     TRAINING. 	 Epoch 10 / 120 [40/1790]   minibatch loss: 0.02746
+2022-02-04 13:59:04,372 INFO     TRAINING. 	 Epoch 10 / 120 [212/1790]   minibatch loss: 0.03346
+2022-02-04 13:59:07,417 INFO     TRAINING. 	 Epoch 10 / 120 [392/1790]   minibatch loss: 0.02962
+2022-02-04 13:59:08,308 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 13:59:09,187 INFO     >> FINISHED EPOCH IN: 09 secs
+2022-02-04 13:59:09,187 INFO     >> STARTING EPOCH 11
+2022-02-04 13:59:09,187 INFO     >> TIME ELAPSED SO FAR:	01 mins, 29 secs
+2022-02-04 13:59:09,187 INFO     >> EST. TIME REMAINING:	01 hours, 22 mins, 29 secs
+2022-02-04 13:59:10,491 INFO     TRAINING. 	 Epoch 11 / 120 [72/1790]   minibatch loss: 0.04358
+2022-02-04 13:59:13,526 INFO     TRAINING. 	 Epoch 11 / 120 [248/1790]   minibatch loss: 0.02857
+2022-02-04 13:59:16,542 INFO     TRAINING. 	 Epoch 11 / 120 [424/1790]   minibatch loss: 0.01945
+2022-02-04 13:59:16,885 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 13:59:17,792 INFO     >> FINISHED EPOCH IN: 09 secs
+2022-02-04 13:59:17,792 INFO     >> STARTING EPOCH 12
+2022-02-04 13:59:17,792 INFO     >> TIME ELAPSED SO FAR:	01 mins, 37 secs
+2022-02-04 13:59:17,792 INFO     >> EST. TIME REMAINING:	01 hours, 22 mins, 40 secs
+2022-02-04 13:59:19,561 INFO     TRAINING. 	 Epoch 12 / 120 [96/1790]   minibatch loss: 0.02405
+2022-02-04 13:59:22,573 INFO     TRAINING. 	 Epoch 12 / 120 [276/1790]   minibatch loss: 0.02791
+2022-02-04 13:59:25,422 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 13:59:25,667 INFO     TESTING VALIDATION SET. Epoch 12 [8/448]
+2022-02-04 13:59:26,292 INFO     >> FINISHED EPOCH IN: 09 secs
+2022-02-04 13:59:26,292 INFO     >> STARTING EPOCH 13
+2022-02-04 13:59:26,292 INFO     >> TIME ELAPSED SO FAR:	01 mins, 46 secs
+2022-02-04 13:59:26,292 INFO     >> EST. TIME REMAINING:	01 hours, 20 mins, 18 secs
+2022-02-04 13:59:28,745 INFO     TRAINING. 	 Epoch 13 / 120 [136/1790]   minibatch loss: 0.01967
+2022-02-04 13:59:31,787 INFO     TRAINING. 	 Epoch 13 / 120 [312/1790]   minibatch loss: 0.02219
+2022-02-04 13:59:34,058 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 13:59:34,823 INFO     TESTING VALIDATION SET. Epoch 13 [24/448]
+2022-02-04 13:59:34,948 INFO     >> FINISHED EPOCH IN: 09 secs
+2022-02-04 13:59:34,948 INFO     >> STARTING EPOCH 14
+2022-02-04 13:59:34,948 INFO     >> TIME ELAPSED SO FAR:	01 mins, 54 secs
+2022-02-04 13:59:34,948 INFO     >> EST. TIME REMAINING:	01 hours, 21 mins, 08 secs
+2022-02-04 13:59:37,840 INFO     TRAINING. 	 Epoch 14 / 120 [160/1790]   minibatch loss: 0.01697
+2022-02-04 13:59:40,855 INFO     TRAINING. 	 Epoch 14 / 120 [336/1790]   minibatch loss: 0.01074
+2022-02-04 13:59:42,698 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 13:59:43,599 INFO     >> FINISHED EPOCH IN: 09 secs
+2022-02-04 13:59:43,600 INFO     >> STARTING EPOCH 15
+2022-02-04 13:59:43,600 INFO     >> TIME ELAPSED SO FAR:	02 mins, 03 secs
+2022-02-04 13:59:43,600 INFO     >> EST. TIME REMAINING:	01 hours, 20 mins, 34 secs
+2022-02-04 13:59:43,886 INFO     TRAINING. 	 Epoch 15 / 120 [16/1790]   minibatch loss: 0.02317
+2022-02-04 13:59:46,886 INFO     TRAINING. 	 Epoch 15 / 120 [188/1790]   minibatch loss: 0.01709
+2022-02-04 13:59:49,953 INFO     TRAINING. 	 Epoch 15 / 120 [368/1790]   minibatch loss: 0.02394
+2022-02-04 13:59:51,261 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 13:59:52,122 INFO     >> FINISHED EPOCH IN: 09 secs
+2022-02-04 13:59:52,122 INFO     >> STARTING EPOCH 16
+2022-02-04 13:59:52,122 INFO     >> TIME ELAPSED SO FAR:	02 mins, 11 secs
+2022-02-04 13:59:52,122 INFO     >> EST. TIME REMAINING:	01 hours, 18 mins, 03 secs
+2022-02-04 13:59:52,962 INFO     TRAINING. 	 Epoch 16 / 120 [44/1790]   minibatch loss: 0.01468
+2022-02-04 13:59:55,964 INFO     TRAINING. 	 Epoch 16 / 120 [212/1790]   minibatch loss: 0.01230
+2022-02-04 13:59:58,965 INFO     TRAINING. 	 Epoch 16 / 120 [388/1790]   minibatch loss: 0.01435
+2022-02-04 13:59:59,933 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 14:00:00,870 INFO     >> FINISHED EPOCH IN: 09 secs
+2022-02-04 14:00:00,870 INFO     >> STARTING EPOCH 17
+2022-02-04 14:00:00,870 INFO     >> TIME ELAPSED SO FAR:	02 mins, 20 secs
+2022-02-04 14:00:00,870 INFO     >> EST. TIME REMAINING:	01 hours, 20 mins, 28 secs
+2022-02-04 14:00:02,027 INFO     TRAINING. 	 Epoch 17 / 120 [64/1790]   minibatch loss: 0.01774
+2022-02-04 14:00:05,037 INFO     TRAINING. 	 Epoch 17 / 120 [228/1790]   minibatch loss: 0.01629
+2022-02-04 14:00:08,089 INFO     TRAINING. 	 Epoch 17 / 120 [396/1790]   minibatch loss: 0.01633
+2022-02-04 14:00:08,931 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 14:00:09,808 INFO     >> FINISHED EPOCH IN: 09 secs
+2022-02-04 14:00:09,808 INFO     >> STARTING EPOCH 18
+2022-02-04 14:00:09,808 INFO     >> TIME ELAPSED SO FAR:	02 mins, 29 secs
+2022-02-04 14:00:09,808 INFO     >> EST. TIME REMAINING:	01 hours, 19 mins, 47 secs
+2022-02-04 14:00:11,113 INFO     TRAINING. 	 Epoch 18 / 120 [72/1790]   minibatch loss: 0.00988
+2022-02-04 14:00:14,152 INFO     TRAINING. 	 Epoch 18 / 120 [248/1790]   minibatch loss: 0.02257
+2022-02-04 14:00:17,189 INFO     TRAINING. 	 Epoch 18 / 120 [424/1790]   minibatch loss: 0.01304
+2022-02-04 14:00:17,553 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 14:00:18,386 INFO     >> FINISHED EPOCH IN: 09 secs
+2022-02-04 14:00:18,386 INFO     >> STARTING EPOCH 19
+2022-02-04 14:00:18,386 INFO     >> TIME ELAPSED SO FAR:	02 mins, 38 secs
+2022-02-04 14:00:18,386 INFO     >> EST. TIME REMAINING:	01 hours, 15 mins, 39 secs
+2022-02-04 14:00:20,205 INFO     TRAINING. 	 Epoch 19 / 120 [100/1790]   minibatch loss: 0.01186
+2022-02-04 14:00:23,261 INFO     TRAINING. 	 Epoch 19 / 120 [272/1790]   minibatch loss: 0.01589
+2022-02-04 14:00:26,267 INFO     TRAINING. 	 Epoch 19 / 120 [440/1790]   minibatch loss: 0.01282
+2022-02-04 14:00:26,357 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 14:00:27,214 INFO     >> FINISHED EPOCH IN: 09 secs
+2022-02-04 14:00:27,214 INFO     >> STARTING EPOCH 20
+2022-02-04 14:00:27,214 INFO     >> TIME ELAPSED SO FAR:	02 mins, 47 secs
+2022-02-04 14:00:27,214 INFO     >> EST. TIME REMAINING:	01 hours, 17 mins, 06 secs
+2022-02-04 14:00:29,292 INFO     TRAINING. 	 Epoch 20 / 120 [112/1790]   minibatch loss: 0.01207
+2022-02-04 14:00:32,292 INFO     TRAINING. 	 Epoch 20 / 120 [280/1790]   minibatch loss: 0.01334
+2022-02-04 14:00:35,173 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 14:00:35,309 INFO     TESTING VALIDATION SET. Epoch 20 [4/448]
+2022-02-04 14:00:36,067 INFO     >> FINISHED EPOCH IN: 09 secs
+2022-02-04 14:00:36,068 INFO     >> STARTING EPOCH 21
+2022-02-04 14:00:36,068 INFO     >> TIME ELAPSED SO FAR:	02 mins, 55 secs
+2022-02-04 14:00:36,068 INFO     >> EST. TIME REMAINING:	01 hours, 17 mins, 13 secs
+2022-02-04 14:00:38,335 INFO     TRAINING. 	 Epoch 21 / 120 [124/1790]   minibatch loss: 0.01523
+2022-02-04 14:00:41,386 INFO     TRAINING. 	 Epoch 21 / 120 [296/1790]   minibatch loss: 0.00842
+2022-02-04 14:00:43,947 INFO     >> DONE TRAINING, STARTING TESTING.
+2022-02-04 14:00:44,484 INFO     TESTING VALIDATION SET. Epoch 21 [16/448]
+2022-02-04 14:00:44,873 INFO     >> FINISHED EPOCH IN: 09 secs
+2022-02-04 14:00:44,874 INFO     >> STARTING EPOCH 22
+2022-02-04 14:00:44,874 INFO     >> TIME ELAPSED SO FAR:	03 mins, 04 secs
+2022-02-04 14:00:44,874 INFO     >> EST. TIME REMAINING:	01 hours, 16 mins, 46 secs
+2022-02-04 14:00:47,542 INFO     TRAINING. 	 Epoch 22 / 120 [144/1790]   minibatch loss: 0.00806

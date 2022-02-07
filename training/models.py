@@ -37,7 +37,7 @@ def build_model(CONFIG):
         model = model.cuda()
     
     def loss_function(x, y):
-        return torch.mean(torch.square(x - y), axis=-1)
+        return torch.sum(torch.square(x - y), axis=-1)
 
     return model, loss_function
 
@@ -206,7 +206,8 @@ class GerbilizerRNNConv(torch.nn.Module):
             torch.nn.Linear(2 * rec_hidden_size, ff_hidden_size),
             (torch.nn.Dropout(0.5) if ff_use_dropout else torch.nn.Identity()),
             torch.nn.ReLU(),
-            torch.nn.Linear(ff_hidden_size, 2)
+            torch.nn.Linear(ff_hidden_size, 2),
+            torch.nn.Sigmoid()
         )
     
     def clip_gradients(self):
