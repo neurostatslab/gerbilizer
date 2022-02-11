@@ -28,6 +28,9 @@ class SinkhornDistance(nn.Module):
         self.reduction = reduction
 
     def forward(self, x, y):
+        orig_device = x.device()
+        x = x.cpu()
+        y = y.cpu()
         # The Sinkhorn algorithm takes as input three variables :
         C = self._cost_matrix(x, y)  # Wasserstein cost function
         x_points = x.shape[-2]
@@ -73,7 +76,7 @@ class SinkhornDistance(nn.Module):
         elif self.reduction == 'sum':
             cost = cost.sum()
 
-        return cost
+        return cost.to(orig_device)
 
     def M(self, C, u, v):
         "Modified cost for logarithmic updates"
