@@ -39,12 +39,12 @@ class SinkhornDistance(nn.Module):
 
         # both marginals are fixed with equal weights
         mu = torch.empty(batch_size, x_points, dtype=torch.float,
-                         requires_grad=False).fill_(1.0 / x_points).squeeze()
+                         requires_grad=False).fill_(1.0 / x_points).squeeze().to(x.device)
         nu = torch.empty(batch_size, y_points, dtype=torch.float,
-                         requires_grad=False).fill_(1.0 / y_points).squeeze()
+                         requires_grad=False).fill_(1.0 / y_points).squeeze().to(x.device)
 
-        u = torch.zeros_like(mu)
-        v = torch.zeros_like(nu)
+        u = torch.zeros_like(mu).to(x.device)
+        v = torch.zeros_like(nu).to(x.device)
         # To check if algorithm terminates because of threshold
         # or max iterations reached
         actual_nits = 0
@@ -73,7 +73,7 @@ class SinkhornDistance(nn.Module):
         elif self.reduction == 'sum':
             cost = cost.sum()
 
-        return cost.to(x.device)
+        return cost
 
     def M(self, C, u, v):
         "Modified cost for logarithmic updates"
@@ -85,7 +85,7 @@ class SinkhornDistance(nn.Module):
         "Returns the matrix of $|x_i-y_j|^p$."
         x_col = x.unsqueeze(-2)
         y_lin = y.unsqueeze(-3)
-        C = torch.sum((torch.abs(x_col - y_lin)) ** p, -1)
+        C = torch.sum((torch.abs(x_col - y_lin)) ** p, -1).to(x.device)
         return C
 
     @staticmethod
