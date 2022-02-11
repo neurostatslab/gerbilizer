@@ -3,7 +3,6 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from emd import EMDLoss
 from sinkhorn import SinkhornDistance
 
 
@@ -42,7 +41,12 @@ def build_model(CONFIG):
     # TODO: implement Wasserstein metric
     if CONFIG["ARCHITECTURE"] == "GerbilizerHourglassNet":
         def loss_function(x, y):
-            return EMDLoss(x, y)
+            dist = SinkhornDistance(
+                eps=CONFIG['SINKHORN_EPSILON'],
+                max_iter=CONFIG['SINKHORN_MAX_ITER'],
+                reduction='mean'
+            )
+            return dist(x, y)
     else:
         def loss_function(x, y):
             return torch.mean(torch.square(x - y), axis=-1)
