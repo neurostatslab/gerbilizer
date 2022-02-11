@@ -45,7 +45,7 @@ def build_model(CONFIG):
                 eps=CONFIG['SINKHORN_EPSILON'],
                 max_iter=CONFIG['SINKHORN_MAX_ITER'],
                 reduction='mean'
-            ).cuda()
+            )
             return dist(x, y)
     else:
         def loss_function(x, y):

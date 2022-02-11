@@ -169,8 +169,8 @@ def build_config(config_name, job_id):
             'USE_BATCH_NORM': True,
             'DEVICE': 'GPU',
             'ARCHITECTURE': 'GerbilizerHourglassNet',
-            'NUM_EPOCHS': 100,
-            'TRAIN_BATCH_SIZE': 8,
+            'NUM_EPOCHS': 50,
+            'TRAIN_BATCH_SIZE': 16,
             'SINKHORN_EPSILON': 1e-2,
             'SINKHORN_MAX_ITER': 100,
             
