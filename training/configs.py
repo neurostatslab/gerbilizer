@@ -165,26 +165,28 @@ def build_config(config_name, job_id):
     elif config_name == "aramis_hourglass":
         CONFIG = {
             'NUM_MICROPHONES': 4,
-            'NUM_CONV_LAYERS': 5,
             'USE_BATCH_NORM': True,
             'DEVICE': 'GPU',
             'ARCHITECTURE': 'GerbilizerHourglassNet',
-            'NUM_EPOCHS': 50,
-            'TRAIN_BATCH_SIZE': 16,
-            'SINKHORN_EPSILON': 1e-2,
-            'SINKHORN_MAX_ITER': 100,
+            'NUM_EPOCHS': 150,
+            'TRAIN_BATCH_SIZE': 64,
+            'MIN_LEARNING_RATE': 1e-2,
+            'MAX_LEARNING_RATE': 1e-5,
+            
+            'NUM_CONV_LAYERS': 4,
+            'USE_MAX_POOLING': True,
             
             'NUM_CHANNELS_LAYER_1': 4,
-            'NUM_CHANNELS_LAYER_2': 16,
-            'NUM_CHANNELS_LAYER_3': 64,
-            'NUM_CHANNELS_LAYER_4': 256,
-            'NUM_CHANNELS_LAYER_5': 1024,
+            'NUM_CHANNELS_LAYER_2': 32,
+            'NUM_CHANNELS_LAYER_3': 256,
+            'NUM_CHANNELS_LAYER_4': 1024,
+            'NUM_CHANNELS_LAYER_5': 4096,
             
             'STRIDE_LAYER_1': 1,
-            'STRIDE_LAYER_2': 2,
-            'STRIDE_LAYER_3': 2,
-            'STRIDE_LAYER_4': 2,
-            'STRIDE_LAYER_5': 4,
+            'STRIDE_LAYER_2': 1,
+            'STRIDE_LAYER_3': 1,
+            'STRIDE_LAYER_4': 1,
+            'STRIDE_LAYER_5': 1,
             
             'FILTER_SIZE_LAYER_1': 256,
             'FILTER_SIZE_LAYER_2': 128,
@@ -194,28 +196,28 @@ def build_config(config_name, job_id):
             
             'DILATION_LAYER_1': 1,
             'DILATION_LAYER_2': 2,
-            'DILATION_LAYER_3': 4,
-            'DILATION_LAYER_4': 8,
-            'DILATION_LAYER_5': 16,
+            'DILATION_LAYER_3': 2,
+            'DILATION_LAYER_4': 4,
+            'DILATION_LAYER_5': 4,
             
             
             'RESIZE_TO_N_CHANNELS': 16,
 
             
-            'NUM_TCONV_LAYERS': 5,
+            'NUM_TCONV_LAYERS': 4,
             
             'TCONV_CHANNELS_LAYER_1': 16,
             'TCONV_CHANNELS_LAYER_2': 8,
             'TCONV_CHANNELS_LAYER_3': 4,
-            'TCONV_CHANNELS_LAYER_4': 2,
+            'TCONV_CHANNELS_LAYER_4': 1,
             'TCONV_CHANNELS_LAYER_5': 1,
             'TCONV_CHANNELS_LAYER_6': 0,
             
-            'TCONV_FILTER_SIZE_LAYER_1': 4,
-            'TCONV_FILTER_SIZE_LAYER_2': 4,
-            'TCONV_FILTER_SIZE_LAYER_3': 4,
-            'TCONV_FILTER_SIZE_LAYER_4': 4,
-            'TCONV_FILTER_SIZE_LAYER_5': 4,
+            'TCONV_FILTER_SIZE_LAYER_1': 3,
+            'TCONV_FILTER_SIZE_LAYER_2': 3,
+            'TCONV_FILTER_SIZE_LAYER_3': 3,
+            'TCONV_FILTER_SIZE_LAYER_4': 3,
+            'TCONV_FILTER_SIZE_LAYER_5': 3,
             'TCONV_FILTER_SIZE_LAYER_6': 0,
             
             'TCONV_STRIDE_LAYER_1': 2,

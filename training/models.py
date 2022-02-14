@@ -283,6 +283,7 @@ class GerbilizerHourglassNet(nn.Module):
         super(GerbilizerHourglassNet, self).__init__()
         
         self.nonlinearity = nn.ReLU()
+        self.maxpool = nn.MaxPool1d(2, 2) if config['USE_MAX_POOLING'] else nn.Identity()
         
         # Create a set of Conv1d layers to reduce input audio to a vector
         n_mics = config['NUM_MICROPHONES']
@@ -358,6 +359,7 @@ class GerbilizerHourglassNet(nn.Module):
             conv_output = b_norm(conv_output)
             conv_output = c_layer(conv_output)
             conv_output = self.nonlinearity(conv_output)
+            conv_output = self.maxpool(conv_output)
             
         avg = F.adaptive_avg_pool1d(conv_output, 1)
         # TODO: add intermediate linear layers?
@@ -368,4 +370,6 @@ class GerbilizerHourglassNet(nn.Module):
             tc_output = tc_layer(tc_output)
             tc_output = self.nonlinearity(tc_output)
         
-        return torch.squeeze(tc_output)
+        squeezed = torch.squeeze(tc_output)
+        # Convert to probability distribution
+        return F.softmax(squeezed, dim=0)

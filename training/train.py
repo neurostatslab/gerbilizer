@@ -59,6 +59,7 @@ output_dir = os.path.join(
     "{0:05g}".format(args.job_id)
 )
 os.makedirs(output_dir, exist_ok=True)
+os.makedirs(os.path.join(output_dir, 'val_sample'), exist_ok=True)
 
 # Configure log file.
 log_filepath = os.path.join(output_dir, "train_log.txt")
@@ -102,6 +103,11 @@ optimizer = torch.optim.SGD(
     lr=0.0, # this is set manually at the start of each epoch.
     momentum=CONFIG["MOMENTUM"],
     weight_decay=CONFIG["WEIGHT_DECAY"]
+)
+
+optimizer = torch.optim.Adam(
+    model.parameters(),
+    lr=0.0
 )
 
 # Cosine annealing learning rate decay.
@@ -217,6 +223,13 @@ for epochcount in range(CONFIG["NUM_EPOCHS"]):
             # Compute loss.
             losses = loss_function(outputs, locations)
             mean_loss = torch.mean(losses)
+
+            # Save one output for visualization:
+            locs = locations.detach().cpu().numpy()
+            sample_idx = np.random.choice(len(locs), 1)[0]
+            sample_pred = outputs[sample_idx].detach().cpu().numpy()
+            np.save(os.path.join(output_dir, 'val_sample', 'sample_pred.npy'), sample_pred)
+            np.save(os.path.join(output_dir, 'val_sample', 'sample_true.npy'), locs[sample_idx])
 
             # Log progress
             progress.log_val_batch(
