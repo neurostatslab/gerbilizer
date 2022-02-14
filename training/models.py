@@ -3,8 +3,6 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from sinkhorn import SinkhornDistance
-
 
 def build_model(CONFIG):
     """
@@ -37,7 +35,7 @@ def build_model(CONFIG):
         model = GerbilizerHourglassNet(CONFIG)
     else:
         raise ValueError("ARCHITECTURE not recognized.")
-    
+
     if CONFIG["ARCHITECTURE"] == "GerbilizerHourglassNet":
         def loss_function(x, y):
             return x * y
@@ -47,7 +45,7 @@ def build_model(CONFIG):
 
     return model, loss_function
 
-    
+
 class GerbilizerSimpleLayer(torch.nn.Module):
 
     def __init__(
@@ -281,10 +279,10 @@ class GerbilizerDenseNet(torch.nn.Module):
 class GerbilizerHourglassNet(nn.Module):
     def __init__(self, config):
         super(GerbilizerHourglassNet, self).__init__()
-        
+
         self.nonlinearity = nn.ReLU()
         self.maxpool = nn.MaxPool1d(2, 2) if config['USE_MAX_POOLING'] else nn.Identity()
-        
+
         # Create a set of Conv1d layers to reduce input audio to a vector
         n_mics = config['NUM_MICROPHONES']
         n_conv_layers = config['NUM_CONV_LAYERS']
@@ -295,7 +293,7 @@ class GerbilizerHourglassNet(nn.Module):
         dilations = [config[f'DILATION_LAYER_{n + 1}'] for n in range(n_conv_layers)]
         strides = [config[f'STRIDE_LAYER_{n + 1}'] for n in range(n_conv_layers)]
         kernel_sizes = [config[f'FILTER_SIZE_LAYER_{n + 1}'] for n in range(n_conv_layers)]
-        
+
         self.conv_layers = nn.ModuleList()
         for in_out, filter_size, stride, dilation in zip(in_out_channels, kernel_sizes, strides, dilations):
             in_channels, out_channels = in_out
@@ -308,20 +306,20 @@ class GerbilizerHourglassNet(nn.Module):
                     dilation=dilation
                 )
             )
-        
+
         self.b_norms = nn.ModuleList()
         for n_features in n_channels[:-1]:
             self.b_norms.append(
                 nn.BatchNorm1d(n_features) if config['USE_BATCH_NORM']
                 else nn.Identity()
             )
-            
+
         # Reshape the intermediate vector into an image
         self.resize_channels = config['RESIZE_TO_N_CHANNELS']
         self.resize_width = int(np.sqrt(n_channels[-1] // self.resize_channels))
         self.resize_height = self.resize_width
-        
-        
+
+
         # Create a set of TransposeConv2d layers to upsample the reshaped vector
         self.tc_layers = nn.ModuleList()
         n_tc_layers = config['NUM_TCONV_LAYERS']
@@ -332,7 +330,7 @@ class GerbilizerHourglassNet(nn.Module):
         tc_dilations = [config[f'TCONV_DILATION_LAYER_{n + 1}'] for n in range(n_tc_layers)]
         tc_strides = [config[f'TCONV_STRIDE_LAYER_{n + 1}'] for n in range(n_tc_layers)]
         tc_kernel_sizes = [config[f'TCONV_FILTER_SIZE_LAYER_{n + 1}'] for n in range(n_tc_layers)]
-        
+
         for in_out, k_size, dilation, stride in zip(in_out_channels, tc_kernel_sizes, tc_dilations, tc_strides):
             in_channels, out_channels = in_out
             self.tc_layers.append(
@@ -344,14 +342,14 @@ class GerbilizerHourglassNet(nn.Module):
                     stride=stride
                 )
             )
-        
+
         self.tc_b_norms = nn.ModuleList()
         for n_features in n_tc_channels[:-1]:
             self.tc_b_norms.append(
                 nn.BatchNorm2d(n_features) if config['USE_BATCH_NORM']
                 else nn.Identity()
             )
-        
+
 
     def forward(self, x):
         conv_output = x
@@ -360,7 +358,7 @@ class GerbilizerHourglassNet(nn.Module):
             conv_output = c_layer(conv_output)
             conv_output = self.nonlinearity(conv_output)
             conv_output = self.maxpool(conv_output)
-            
+
         avg = F.adaptive_avg_pool1d(conv_output, 1)
         # TODO: add intermediate linear layers?
         avg = avg.reshape((-1, self.resize_channels, self.resize_height, self.resize_width))
@@ -369,7 +367,7 @@ class GerbilizerHourglassNet(nn.Module):
             tc_output = b_norm(tc_output)
             tc_output = tc_layer(tc_output)
             tc_output = self.nonlinearity(tc_output)
-        
+
         squeezed = torch.squeeze(tc_output)
         # Convert to probability distribution
         return F.softmax(squeezed, dim=0)
