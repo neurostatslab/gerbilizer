@@ -313,6 +313,16 @@ class GerbilizerHourglassNet(nn.Module):
                 nn.BatchNorm1d(n_features) if config['USE_BATCH_NORM']
                 else nn.Identity()
             )
+        
+        n_fc_layers = config['NUM_FC_LAYERS']
+        fc_hidden_sizes = [config[f'HIDDEN_SIZE_FC_{n+1}'] for n in range(n_fc_layers)]
+        fc_hidden_sizes.insert(0, out_channels)
+
+        self.fc_layers = nn.ModuleList()
+        for in_channels, out_channels in zip(fc_hidden_sizes[:-1], fc_hidden_sizes[1:]):
+            self.fc_layers.append(
+                nn.Linear(in_channels, out_channels)
+            )
 
         # Reshape the intermediate vector into an image
         self.resize_channels = config['RESIZE_TO_N_CHANNELS']
@@ -360,7 +370,10 @@ class GerbilizerHourglassNet(nn.Module):
             conv_output = self.maxpool(conv_output)
 
         avg = F.adaptive_avg_pool1d(conv_output, 1)
-        # TODO: add intermediate linear layers?
+        avg = torch.squeeze(avg, -1)
+        for lin_layer in self.fc_layers:
+            avg = lin_layer(avg)
+
         avg = avg.reshape((-1, self.resize_channels, self.resize_height, self.resize_width))
         tc_output = avg
         for tc_layer, b_norm in zip(self.tc_layers, self.tc_b_norms):

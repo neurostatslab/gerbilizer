@@ -177,16 +177,16 @@ def build_config(config_name, job_id):
             'USE_MAX_POOLING': True,
             
             'NUM_CHANNELS_LAYER_1': 4,
-            'NUM_CHANNELS_LAYER_2': 32,
-            'NUM_CHANNELS_LAYER_3': 256,
-            'NUM_CHANNELS_LAYER_4': 1024,
-            'NUM_CHANNELS_LAYER_5': 4096,
+            'NUM_CHANNELS_LAYER_2': 4**2,
+            'NUM_CHANNELS_LAYER_3': 4**3,
+            'NUM_CHANNELS_LAYER_4': 4**4,
+            'NUM_CHANNELS_LAYER_5': 4**5,
             
             'STRIDE_LAYER_1': 1,
-            'STRIDE_LAYER_2': 1,
-            'STRIDE_LAYER_3': 1,
-            'STRIDE_LAYER_4': 1,
-            'STRIDE_LAYER_5': 1,
+            'STRIDE_LAYER_2': 2,
+            'STRIDE_LAYER_3': 2,
+            'STRIDE_LAYER_4': 2,
+            'STRIDE_LAYER_5': 2,
             
             'FILTER_SIZE_LAYER_1': 256,
             'FILTER_SIZE_LAYER_2': 128,
@@ -195,21 +195,27 @@ def build_config(config_name, job_id):
             'FILTER_SIZE_LAYER_5': 16,
             
             'DILATION_LAYER_1': 1,
-            'DILATION_LAYER_2': 2,
-            'DILATION_LAYER_3': 2,
-            'DILATION_LAYER_4': 4,
-            'DILATION_LAYER_5': 4,
-            
+            'DILATION_LAYER_2': 1,
+            'DILATION_LAYER_3': 1,
+            'DILATION_LAYER_4': 1,
+            'DILATION_LAYER_5': 1,
+
+
+            'NUM_FC_LAYERS': 3,
+            'HIDDEN_SIZE_FC_1': 2048,
+            'HIDDEN_SIZE_FC_2': 4096,
+            'HIDDEN_SIZE_FC_3': 8192,
+
             
             'RESIZE_TO_N_CHANNELS': 16,
 
             
-            'NUM_TCONV_LAYERS': 4,
+            'NUM_TCONV_LAYERS': 5,
             
             'TCONV_CHANNELS_LAYER_1': 16,
             'TCONV_CHANNELS_LAYER_2': 8,
             'TCONV_CHANNELS_LAYER_3': 4,
-            'TCONV_CHANNELS_LAYER_4': 1,
+            'TCONV_CHANNELS_LAYER_4': 4,
             'TCONV_CHANNELS_LAYER_5': 1,
             'TCONV_CHANNELS_LAYER_6': 0,
             
