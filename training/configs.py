@@ -170,8 +170,8 @@ def build_config(config_name, job_id):
             'ARCHITECTURE': 'GerbilizerHourglassNet',
             'NUM_EPOCHS': 150,
             'TRAIN_BATCH_SIZE': 64,
-            'MIN_LEARNING_RATE': 1e-2,
-            'MAX_LEARNING_RATE': 1e-5,
+            'MAX_LEARNING_RATE': 1e-2,
+            'MIN_LEARNING_RATE': 1e-5,
             
             'NUM_CONV_LAYERS': 4,
             'USE_MAX_POOLING': True,
