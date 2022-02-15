@@ -87,6 +87,10 @@ with open(os.path.join(output_dir, "config.json"), "w") as f:
     f.write(json.dumps(CONFIG, indent=4))
 
 logging.info("Wrote config.txt file".format(args.job_id))
+cuda_avail = torch.cuda.is_available()
+logging.info(f"Torch cuda availability: {cuda_avail}")
+if cuda_avail:
+    logging.info(f"CUDA device name: {torch.cuda.get_device_name()}")
 
 # Set random seeds. Note that numpy random seed will affect
 # the data augmentation under the current implementation.
