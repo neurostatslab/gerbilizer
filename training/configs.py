@@ -28,6 +28,7 @@ def build_config(config_name, job_id):
         # Training hyperparameters.
         "NUM_EPOCHS": 20,
         "TRAIN_BATCH_SIZE": 64,
+        "USE_SAM_OPTIMIZATION": True,
         "MAX_LEARNING_RATE": 1e-2,
         "MIN_LEARNING_RATE": 1e-6,
         "WEIGHT_DECAY": 1e-5,
@@ -164,8 +165,9 @@ def build_config(config_name, job_id):
         }
     elif config_name == "aramis_hourglass":
         CONFIG = {
+            'USE_SAM_OPTIMIZATION': True,
             'NUM_MICROPHONES': 4,
-            'USE_BATCH_NORM': True,
+            'USE_BATCH_NORM': False,
             'DEVICE': 'GPU',
             'ARCHITECTURE': 'GerbilizerHourglassNet',
             'NUM_EPOCHS': 150,

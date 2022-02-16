@@ -1,16 +1,18 @@
-import os
 import argparse
-import torch
-import logging
-import warnings
-import numpy as np
 import json
+import logging
+import os
+
+import numpy as np
+import torch
 
 from configs import build_config
 from models import build_model
 from dataloaders import build_dataloaders
 from augmentations import build_augmentations
 from logger import ProgressLogger
+from sam import SAM
+
 
 # =============================== #
 # === Parse Command Line Args === #
@@ -114,6 +116,14 @@ optimizer = torch.optim.Adam(
     lr=0.0
 )
 
+if CONFIG['USE_SAM_OPTIMIZATION']:
+    sam_optimizer = SAM(
+        model.parameters(),
+        base_optimizer=type(optimizer),
+        rho=0.05,
+        adaptive=False
+    )
+
 # Cosine annealing learning rate decay.
 def lr_schedule(epoch):
     """
@@ -164,16 +174,21 @@ best_loss = np.inf
 
 # Save initial weights.
 #  -> Note
-logging.info(f" ==== STARTING TRAINING ====\n")
+logging.info(" ==== STARTING TRAINING ====\n")
 logging.info(f">> SAVING INITIAL MODEL WEIGHTS TO {init_weights_file}")
 torch.save(model.state_dict(), init_weights_file)
 
-for epochcount in range(CONFIG["NUM_EPOCHS"]):
 
+def run_training(epoch_count, optimizer, model, loss_function, traindata):
     # Set the learning rate using cosine annealing.
-    logging.info(f">> SETTING NEW LEARNING RATE: {lr_schedule(epochcount)}")
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr_schedule(epochcount)
+    logging.info(f">> SETTING NEW LEARNING RATE: {lr_schedule(epoch_count)}")
+    if not isinstance(optimizer, SAM):
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = lr_schedule(epoch_count)
+    else:
+        for param_group in optimizer.base_optimizer.param_groups:
+            param_group['lr'] = lr_schedule(epoch_count)
+
 
     # === TRAIN FOR ONE EPOCH === #
     progress.start_training()
@@ -189,27 +204,48 @@ for epochcount in range(CONFIG["NUM_EPOCHS"]):
             sounds = sounds.cuda()
             locations = locations.cuda()
 
-        # Prepare optimizer.
-        optimizer.zero_grad()
+        augmented_inputs = augment(sounds, sample_rate=16000)
 
-        # Forward pass, including data augmentation.
-        outputs = model(
-            augment(sounds, sample_rate=16000)
-        )
+        # Normal training procedure (without SAM)
+        if not isinstance(optimizer, SAM):
+            # Prepare optimizer.
+            optimizer.zero_grad()
 
-        # Compute loss.
-        losses = loss_function(outputs, locations)
-        mean_loss = torch.mean(losses)
+            # Forward pass, including data augmentation.
+            outputs = model(augmented_inputs)
 
-        # Backwards pass.
-        mean_loss.backward()
-        optimizer.step()
+            # Compute loss.
+            losses = loss_function(outputs, locations)
+            mean_loss = torch.mean(losses)
+            reported_loss = mean_loss.item()
+
+            # Backwards pass.
+            mean_loss.backward()
+            optimizer.step()
+        else:
+            # First pass through data:
+            outputs = model(augmented_inputs)
+            losses = loss_function(outputs, locations)
+            mean_loss = torch.mean(losses)
+            # Report the loss from the first pass
+            reported_loss = mean_loss.item()
+            mean_loss.backward()
+            optimizer.first_step(zero_grad=True)
+
+            # Second pass through data:
+            outputs = model(augmented_inputs)
+            losses = loss_function(outputs, locations)
+            mean_loss = torch.mean(losses)
+            mean_loss.backward()
+            optimizer.second_step(zero_grad=True)
 
         # Count batch as completed.
         progress.log_train_batch(
-            mean_loss.item(), np.nan, len(sounds)
+            reported_loss, np.nan, len(sounds)
         )
 
+
+def run_validation(epoch_count, model, loss_function, valdata):
     # === EVAL VALIDATION ACCURACY === #
     progress.start_testing()
     model.eval()
@@ -232,8 +268,8 @@ for epochcount in range(CONFIG["NUM_EPOCHS"]):
             locs = locations.detach().cpu().numpy()
             sample_idx = np.random.choice(len(locs), 1)[0]
             sample_pred = outputs[sample_idx].detach().cpu().numpy()
-            np.save(os.path.join(output_dir, 'val_sample', 'sample_pred.npy'), sample_pred)
-            np.save(os.path.join(output_dir, 'val_sample', 'sample_true.npy'), locs[sample_idx])
+            np.save(os.path.join(output_dir, 'val_sample', f'sample_pred_{epoch_count}.npy'), sample_pred)
+            np.save(os.path.join(output_dir, 'val_sample', f'sample_true_{epoch_count}.npy'), locs[sample_idx])
 
             # Log progress
             progress.log_val_batch(
@@ -251,6 +287,10 @@ for epochcount in range(CONFIG["NUM_EPOCHS"]):
         )
         torch.save(model.state_dict(), best_weights_file)
 
+
+for epochcount in range(CONFIG["NUM_EPOCHS"]):
+    run_training(epochcount, optimizer, model, loss_function, traindata)
+    run_validation(epochcount, model, loss_function, valdata)
 
 # Done training.
 logging.info(
