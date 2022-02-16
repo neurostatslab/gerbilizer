@@ -170,7 +170,6 @@ progress = ProgressLogger(
     CONFIG["LOG_INTERVAL"],
     output_dir
 )
-best_loss = np.inf
 
 # Save initial weights.
 #  -> Note
@@ -245,7 +244,7 @@ def run_training(epoch_count, optimizer, model, loss_function, traindata):
         )
 
 
-def run_validation(epoch_count, model, loss_function, valdata):
+def run_validation(epoch_count, model, loss_function, valdata, best_loss):
     # === EVAL VALIDATION ACCURACY === #
     progress.start_testing()
     model.eval()
@@ -286,11 +285,13 @@ def run_validation(epoch_count, model, loss_function, valdata):
             f">> VALIDATION LOSS IS BEST SO FAR, SAVING WEIGHTS TO {best_weights_file}"
         )
         torch.save(model.state_dict(), best_weights_file)
+    return best_loss
 
 
+best_loss = np.inf
 for epochcount in range(CONFIG["NUM_EPOCHS"]):
     run_training(epochcount, optimizer, model, loss_function, traindata)
-    run_validation(epochcount, model, loss_function, valdata)
+    best_loss = run_validation(epochcount, model, loss_function, valdata)
 
 # Done training.
 logging.info(
