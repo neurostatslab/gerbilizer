@@ -326,7 +326,7 @@ class GerbilizerHourglassNet(nn.Module):
 
         # Reshape the intermediate vector into an image
         self.resize_channels = config['RESIZE_TO_N_CHANNELS']
-        self.resize_width = int(np.sqrt(n_channels[-1] // self.resize_channels))
+        self.resize_width = int(np.sqrt(fc_hidden_sizes[-1] // self.resize_channels))
         self.resize_height = self.resize_width
 
 
@@ -373,7 +373,6 @@ class GerbilizerHourglassNet(nn.Module):
         avg = torch.squeeze(avg, -1)
         for lin_layer in self.fc_layers:
             avg = lin_layer(avg)
-
         avg = avg.reshape((-1, self.resize_channels, self.resize_height, self.resize_width))
         tc_output = avg
         for tc_layer, b_norm in zip(self.tc_layers, self.tc_b_norms):
