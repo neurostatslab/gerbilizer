@@ -267,8 +267,8 @@ def run_validation(epoch_count, model, loss_function, valdata, best_loss):
             locs = locations.detach().cpu().numpy()
             sample_idx = np.random.choice(len(locs), 1)[0]
             sample_pred = outputs[sample_idx].detach().cpu().numpy()
-            np.save(os.path.join(output_dir, 'val_sample', f'sample_pred_{epoch_count}.npy'), sample_pred)
-            np.save(os.path.join(output_dir, 'val_sample', f'sample_true_{epoch_count}.npy'), locs[sample_idx])
+            np.save(os.path.join(output_dir, 'val_sample', 'sample_pred_{:0>3d}.npy'.format(epoch_count)), sample_pred)
+            np.save(os.path.join(output_dir, 'val_sample', 'sample_true_{:0>3d}.npy'.format(epoch_count)), locs[sample_idx])
 
             # Log progress
             progress.log_val_batch(
@@ -291,7 +291,7 @@ def run_validation(epoch_count, model, loss_function, valdata, best_loss):
 best_loss = np.inf
 for epochcount in range(CONFIG["NUM_EPOCHS"]):
     run_training(epochcount, optimizer, model, loss_function, traindata)
-    best_loss = run_validation(epochcount, model, loss_function, valdata)
+    best_loss = run_validation(epochcount, model, loss_function, valdata, best_loss)
 
 # Done training.
 logging.info(

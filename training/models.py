@@ -286,37 +286,32 @@ class GerbilizerHourglassNet(nn.Module):
         # Create a set of Conv1d layers to reduce input audio to a vector
         n_mics = config['NUM_MICROPHONES']
         n_conv_layers = config['NUM_CONV_LAYERS']
-        n_channels = [config[f'NUM_CHANNELS_LAYER_{n + 1}'] for n in range(n_conv_layers)]
-        n_channels.insert(0, n_mics)
-        # Each entry is a tuple of the form (in_channels, out_channels)
-        in_out_channels = zip(n_channels[:-1], n_channels[1:])
-        dilations = [config[f'DILATION_LAYER_{n + 1}'] for n in range(n_conv_layers)]
-        strides = [config[f'STRIDE_LAYER_{n + 1}'] for n in range(n_conv_layers)]
-        kernel_sizes = [config[f'FILTER_SIZE_LAYER_{n + 1}'] for n in range(n_conv_layers)]
 
-        self.conv_layers = nn.ModuleList()
-        for in_out, filter_size, stride, dilation in zip(in_out_channels, kernel_sizes, strides, dilations):
-            in_channels, out_channels = in_out
-            self.conv_layers.append(
-                nn.Conv1d(
-                    in_channels=in_channels,
-                    out_channels=out_channels,
-                    kernel_size=filter_size,
-                    stride=stride,
-                    dilation=dilation
-                )
-            )
 
-        self.b_norms = nn.ModuleList()
-        for n_features in n_channels[:-1]:
-            self.b_norms.append(
-                nn.BatchNorm1d(n_features) if config['USE_BATCH_NORM']
-                else nn.Identity()
-            )
+        self.f_convs = torch.nn.ModuleList([])
+        self.g_convs = torch.nn.ModuleList([])
+        self.norm_layers = torch.nn.ModuleList([])
+        N = n_mics
+
+        for i in range(n_conv_layers):
+            n = config[f"NUM_CHANNELS_LAYER_{i + 1}"]
+            fs = config[f"FILTER_SIZE_LAYER_{i + 1}"]
+            d = config[f"DILATION_LAYER_{i + 1}"]
+            self.f_convs.append(torch.nn.Conv1d(
+                N, n, fs, stride=2, padding=((fs * d - 1) // 2), dilation=d
+            ))
+            self.g_convs.append(torch.nn.Conv1d(
+                N, n, fs, stride=2, padding=((fs * d - 1) // 2), dilation=d
+            ))
+            if config["USE_BATCH_NORM"]:
+                self.norm_layers.append(torch.nn.BatchNorm1d(N, momentum=0))
+            else:
+                self.norm_layers.append(torch.nn.Identity())
+            N = N + n
         
         n_fc_layers = config['NUM_FC_LAYERS']
         fc_hidden_sizes = [config[f'HIDDEN_SIZE_FC_{n+1}'] for n in range(n_fc_layers)]
-        fc_hidden_sizes.insert(0, out_channels)
+        fc_hidden_sizes.insert(0, N)
 
         self.fc_layers = nn.ModuleList()
         for in_channels, out_channels in zip(fc_hidden_sizes[:-1], fc_hidden_sizes[1:]):
@@ -356,20 +351,21 @@ class GerbilizerHourglassNet(nn.Module):
         self.tc_b_norms = nn.ModuleList()
         for n_features in n_tc_channels[:-1]:
             self.tc_b_norms.append(
-                nn.BatchNorm2d(n_features) if config['USE_BATCH_NORM']
+                nn.BatchNorm2d(n_features, momentum=0) if config['USE_BATCH_NORM']
                 else nn.Identity()
             )
 
 
     def forward(self, x):
-        conv_output = x
-        for c_layer, b_norm in zip(self.conv_layers, self.b_norms):
-            conv_output = b_norm(conv_output)
-            conv_output = c_layer(conv_output)
-            conv_output = self.nonlinearity(conv_output)
-            conv_output = self.maxpool(conv_output)
+        for fc, gc, bnrm in zip(
+                self.f_convs, self.g_convs, self.norm_layers
+            ):
+            x = bnrm(x)
+            h = torch.tanh(fc(x)) * torch.sigmoid(gc(x))
+            xp = self.maxpool(x)
+            x = torch.cat((xp, h), dim=1)
 
-        avg = F.adaptive_avg_pool1d(conv_output, 1)
+        avg = F.adaptive_avg_pool1d(x, 1)
         avg = torch.squeeze(avg, -1)
         for lin_layer in self.fc_layers:
             avg = lin_layer(avg)

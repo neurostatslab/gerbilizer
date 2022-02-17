@@ -167,8 +167,8 @@ def build_config(config_name, job_id):
         CONFIG = {
             'USE_SAM_OPTIMIZATION': True,
             'NUM_MICROPHONES': 4,
-            'USE_BATCH_NORM': False,
-            'DEVICE': 'GPU',
+            'USE_BATCH_NORM': True,
+            # 'DEVICE': 'GPU',
             'ARCHITECTURE': 'GerbilizerHourglassNet',
             'NUM_EPOCHS': 150,
             'TRAIN_BATCH_SIZE': 64,
@@ -209,15 +209,15 @@ def build_config(config_name, job_id):
             'HIDDEN_SIZE_FC_3': 8192,
 
             
-            'RESIZE_TO_N_CHANNELS': 16,
+            'RESIZE_TO_N_CHANNELS': 32,
 
             
-            'NUM_TCONV_LAYERS': 5,
+            'NUM_TCONV_LAYERS': 4,
             
-            'TCONV_CHANNELS_LAYER_1': 16,
-            'TCONV_CHANNELS_LAYER_2': 8,
-            'TCONV_CHANNELS_LAYER_3': 4,
-            'TCONV_CHANNELS_LAYER_4': 4,
+            'TCONV_CHANNELS_LAYER_1': 32,
+            'TCONV_CHANNELS_LAYER_2': 16,
+            'TCONV_CHANNELS_LAYER_3': 8,
+            'TCONV_CHANNELS_LAYER_4': 1,
             'TCONV_CHANNELS_LAYER_5': 1,
             'TCONV_CHANNELS_LAYER_6': 0,
             
