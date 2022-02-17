@@ -113,7 +113,7 @@ optimizer = torch.optim.SGD(
 
 optimizer = torch.optim.Adam(
     model.parameters(),
-    lr=0.0
+    lr=1e-3
 )
 
 if CONFIG['USE_SAM_OPTIMIZATION']:
@@ -291,7 +291,7 @@ def run_validation(epoch_count, model, loss_function, valdata, best_loss):
 best_loss = np.inf
 for epochcount in range(CONFIG["NUM_EPOCHS"]):
     run_training(epochcount, optimizer, model, loss_function, traindata)
-    best_loss = run_validation(epochcount, model, loss_function, valdata)
+    best_loss = run_validation(epochcount, model, loss_function, valdata, best_loss)
 
 # Done training.
 logging.info(

@@ -310,7 +310,7 @@ class GerbilizerHourglassNet(nn.Module):
         self.b_norms = nn.ModuleList()
         for n_features in n_channels[:-1]:
             self.b_norms.append(
-                nn.BatchNorm1d(n_features) if config['USE_BATCH_NORM']
+                nn.BatchNorm1d(n_features, momentum=0) if config['USE_BATCH_NORM']
                 else nn.Identity()
             )
         
@@ -356,7 +356,7 @@ class GerbilizerHourglassNet(nn.Module):
         self.tc_b_norms = nn.ModuleList()
         for n_features in n_tc_channels[:-1]:
             self.tc_b_norms.append(
-                nn.BatchNorm2d(n_features) if config['USE_BATCH_NORM']
+                nn.BatchNorm2d(n_features, momentum=0) if config['USE_BATCH_NORM']
                 else nn.Identity()
             )
 
