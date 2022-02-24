@@ -281,6 +281,8 @@ def softmax_2d(x):
     over the last two dimensions is the all ones vector.
     Expects x to have shape (N, width, height), where N is the batch size
     """
+    # Attempt to avoid overflow
+    x -= x.max(dim=1, keepdim=True)[0].max(dim=2, keepdim=True)[0]
     expx = torch.exp(x)
     sums = torch.sum(expx, dim=(1, 2), keepdim=True)
 
