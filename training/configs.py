@@ -168,7 +168,7 @@ def build_config(config_name, job_id):
             'USE_SAM_OPTIMIZATION': True,
             'NUM_MICROPHONES': 4,
             'USE_BATCH_NORM': True,
-            # 'DEVICE': 'GPU',
+            'DEVICE': 'GPU',
             'ARCHITECTURE': 'GerbilizerHourglassNet',
             'NUM_EPOCHS': 150,
             'TRAIN_BATCH_SIZE': 64,
@@ -178,23 +178,23 @@ def build_config(config_name, job_id):
             'NUM_CONV_LAYERS': 4,
             'USE_MAX_POOLING': True,
             
-            'NUM_CHANNELS_LAYER_1': 4,
-            'NUM_CHANNELS_LAYER_2': 4**2,
-            'NUM_CHANNELS_LAYER_3': 4**3,
-            'NUM_CHANNELS_LAYER_4': 4**4,
-            'NUM_CHANNELS_LAYER_5': 4**5,
+            'NUM_CHANNELS_LAYER_1': 60,
+            'NUM_CHANNELS_LAYER_2': 64,
+            'NUM_CHANNELS_LAYER_3': 64,
+            'NUM_CHANNELS_LAYER_4': 64,
+            'NUM_CHANNELS_LAYER_5': 64,
             
             'STRIDE_LAYER_1': 1,
-            'STRIDE_LAYER_2': 2,
-            'STRIDE_LAYER_3': 2,
-            'STRIDE_LAYER_4': 2,
-            'STRIDE_LAYER_5': 2,
+            'STRIDE_LAYER_2': 1,
+            'STRIDE_LAYER_3': 1,
+            'STRIDE_LAYER_4': 1,
+            'STRIDE_LAYER_5': 1,
             
-            'FILTER_SIZE_LAYER_1': 256,
-            'FILTER_SIZE_LAYER_2': 128,
-            'FILTER_SIZE_LAYER_3': 64,
-            'FILTER_SIZE_LAYER_4': 32,
-            'FILTER_SIZE_LAYER_5': 16,
+            'FILTER_SIZE_LAYER_1': 51,
+            'FILTER_SIZE_LAYER_2': 51,
+            'FILTER_SIZE_LAYER_3': 51,
+            'FILTER_SIZE_LAYER_4': 51,
+            'FILTER_SIZE_LAYER_5': 51,
             
             'DILATION_LAYER_1': 1,
             'DILATION_LAYER_2': 1,
@@ -210,7 +210,6 @@ def build_config(config_name, job_id):
 
             
             'RESIZE_TO_N_CHANNELS': 32,
-
             
             'NUM_TCONV_LAYERS': 4,
             

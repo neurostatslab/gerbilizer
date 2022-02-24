@@ -276,12 +276,22 @@ class GerbilizerDenseNet(torch.nn.Module):
         return torch.stack((px, py), dim=-1)
 
 
+def softmax_2d(x):
+    """ Performs softmax over the first dimension such that the sum of x
+    over the last two dimensions is the all ones vector.
+    Expects x to have shape (N, width, height), where N is the batch size
+    """
+    expx = torch.exp(x)
+    sums = torch.sum(expx, dim=(1, 2), keepdim=True)
+
+    return expx / sums
+
 class GerbilizerHourglassNet(nn.Module):
     def __init__(self, config):
         super(GerbilizerHourglassNet, self).__init__()
 
         self.nonlinearity = nn.ReLU()
-        self.maxpool = nn.MaxPool1d(2, 2) if config['USE_MAX_POOLING'] else nn.Identity()
+        self.maxpool = nn.MaxPool1d(2, 2, ceil_mode=True) if config['USE_MAX_POOLING'] else nn.Identity()
 
         # Create a set of Conv1d layers to reduce input audio to a vector
         n_mics = config['NUM_MICROPHONES']
@@ -291,22 +301,29 @@ class GerbilizerHourglassNet(nn.Module):
         self.f_convs = torch.nn.ModuleList([])
         self.g_convs = torch.nn.ModuleList([])
         self.norm_layers = torch.nn.ModuleList([])
+
         N = n_mics
+        L = 12500  # input signal length
+        M = 12500
 
         for i in range(n_conv_layers):
-            n = config[f"NUM_CHANNELS_LAYER_{i + 1}"]
-            fs = config[f"FILTER_SIZE_LAYER_{i + 1}"]
-            d = config[f"DILATION_LAYER_{i + 1}"]
-            self.f_convs.append(torch.nn.Conv1d(
-                N, n, fs, stride=2, padding=((fs * d - 1) // 2), dilation=d
-            ))
-            self.g_convs.append(torch.nn.Conv1d(
-                N, n, fs, stride=2, padding=((fs * d - 1) // 2), dilation=d
-            ))
             if config["USE_BATCH_NORM"]:
                 self.norm_layers.append(torch.nn.BatchNorm1d(N, momentum=0))
             else:
                 self.norm_layers.append(torch.nn.Identity())
+            
+            n = config[f"NUM_CHANNELS_LAYER_{i + 1}"]
+            fs = config[f"FILTER_SIZE_LAYER_{i + 1}"]
+            # Ensure the kernel size is odd (allows the signal length to be halved)
+            # fs = fs if (fs % 2 == 1) else fs + 1
+            d = config[f"DILATION_LAYER_{i + 1}"]
+            padding = (fs * d - d) // 2
+            self.f_convs.append(torch.nn.Conv1d(
+                N, n, fs, stride=2, padding=padding, dilation=d
+            ))
+            self.g_convs.append(torch.nn.Conv1d(
+                N, n, fs, stride=2, padding=padding, dilation=d
+            ))
             N = N + n
         
         n_fc_layers = config['NUM_FC_LAYERS']
@@ -379,4 +396,4 @@ class GerbilizerHourglassNet(nn.Module):
 
         squeezed = torch.squeeze(tc_output)
         # Convert to probability distribution
-        return F.softmax(squeezed, dim=0)
+        return softmax_2d(squeezed)

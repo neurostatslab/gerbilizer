@@ -60,7 +60,7 @@ class GerbilVocalizationDataset(Dataset):
         sound = self.dataset['vocalizations'][idx][:]
         midpoint = len(sound) // 2
         snip_len = 125 * 45  # 45ms
-        sound = sound[midpoint - snip_len // 2 : midpoint + snip_len // 2, ...]
+        # sound = sound[midpoint - snip_len // 2 : midpoint + snip_len // 2, ...]
         # TODO: Fold cross correlations into hourglass model
 
         # Load animal location in the environment.
