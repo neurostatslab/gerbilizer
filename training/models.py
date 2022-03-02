@@ -41,7 +41,7 @@ def build_model(CONFIG):
             log_label = torch.log(label.flatten(start_dim=1))
             flat_output = output.flatten(start_dim=1)
             lse_output = torch.logsumexp(flat_output, dim=1, keepdims=True)
-            return (flat_output + log_label - lse_output).sum(axis=1)
+            return torch.sum(flat_output + log_label - lse_output, dim=1)
 
     else:
         def loss_function(x, y):
@@ -279,19 +279,6 @@ class GerbilizerDenseNet(torch.nn.Module):
         py = self.y_coord_readout(x_final)
         return torch.stack((px, py), dim=-1)
 
-
-def softmax_2d(x):
-    """ Performs softmax over the first dimension such that the sum of x
-    over the last two dimensions is the all ones vector.
-    Expects x to have shape (N, width, height), where N is the batch size
-    """
-    # Attempt to avoid overflow
-    x -= x.max(dim=1, keepdim=True)[0].max(dim=2, keepdim=True)[0]
-    expx = torch.exp(x)
-    sums = torch.sum(expx, dim=(1, 2), keepdim=True)
-
-    return expx / sums
-
 class GerbilizerHourglassNet(nn.Module):
     def __init__(self, config):
         super(GerbilizerHourglassNet, self).__init__()
@@ -402,4 +389,4 @@ class GerbilizerHourglassNet(nn.Module):
 
         squeezed = torch.squeeze(tc_output)
         # Convert to probability distribution
-        return softmax_2d(squeezed)
+        return squeezed
