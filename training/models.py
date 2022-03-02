@@ -37,8 +37,12 @@ def build_model(CONFIG):
         raise ValueError("ARCHITECTURE not recognized.")
 
     if CONFIG["ARCHITECTURE"] == "GerbilizerHourglassNet":
-        def loss_function(x, y):
-            return x * y
+        def loss_function(output, label):
+            log_label = torch.log(label.flatten(start_dim=1))
+            flat_output = output.flatten(start_dim=1)
+            lse_output = torch.logsumexp(flat_output, dim=1, keepdims=True)
+            return (flat_output + log_label - lse_output).sum(axis=1)
+
     else:
         def loss_function(x, y):
             return torch.mean(torch.square(x - y), axis=-1)
