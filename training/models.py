@@ -38,7 +38,7 @@ def build_model(CONFIG):
 
     if CONFIG["ARCHITECTURE"] == "GerbilizerHourglassNet":
         def loss_function(output, label):
-            log_label = torch.log(label.flatten(start_dim=1))
+            log_label = torch.log(label.flatten(start_dim=1) + 1)
             flat_output = output.flatten(start_dim=1)
             lse_output = torch.logsumexp(flat_output, dim=1, keepdims=True)
             return torch.sum(flat_output + log_label - lse_output, dim=1)
