@@ -273,10 +273,10 @@ def run_validation(epoch_count, model, loss_function, valdata, best_loss):
 
             # Save one output for visualization:
             locs = locations.detach().cpu().numpy()
-            sample_idx = np.random.choice(len(locs), 1)[0]
-            sample_pred = outputs[sample_idx].detach().cpu().numpy()
+            # sample_idx = np.random.choice(len(locs), 1)[0]
+            sample_pred = outputs.detach().cpu().numpy()
             np.save(os.path.join(output_dir, 'val_sample', 'sample_pred_{:0>3d}.npy'.format(epoch_count)), sample_pred)
-            np.save(os.path.join(output_dir, 'val_sample', 'sample_true_{:0>3d}.npy'.format(epoch_count)), locs[sample_idx])
+            np.save(os.path.join(output_dir, 'val_sample', 'sample_true_{:0>3d}.npy'.format(epoch_count)), locs)
 
             # Log progress
             progress.log_val_batch(
