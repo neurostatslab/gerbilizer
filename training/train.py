@@ -178,6 +178,13 @@ logging.info(f">> SAVING INITIAL MODEL WEIGHTS TO {init_weights_file}")
 torch.save(model.state_dict(), init_weights_file)
 
 
+def query_gpu_memory():
+    total_mem = '{.2f}'.format( torch.cuda.get_device_properties(0).total_memory / 2**30 )
+    reserved = '{.2f}'.format( torch.cuda.memory_reserved(0) / 2**30 )
+    allocated = '{.2f}'.format( torch.cuda.memory_allocated(0) / 2**30 )
+    return f"Reserved GPU memory: {reserved}/{total_mem}GiB\tAllocated memory: {allocated}/{reserved}GiB"
+
+
 def run_training(epoch_count, optimizer, model, loss_function, traindata):
     # Set the learning rate using cosine annealing.
     logging.info(f">> SETTING NEW LEARNING RATE: {lr_schedule(epoch_count)}")
@@ -242,6 +249,7 @@ def run_training(epoch_count, optimizer, model, loss_function, traindata):
         progress.log_train_batch(
             reported_loss, np.nan, len(sounds)
         )
+        logging.info(query_gpu_memory())
 
 
 def run_validation(epoch_count, model, loss_function, valdata, best_loss):
