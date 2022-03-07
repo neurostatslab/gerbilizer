@@ -179,9 +179,9 @@ torch.save(model.state_dict(), init_weights_file)
 
 
 def query_gpu_memory():
-    total_mem = '{.2f}'.format( torch.cuda.get_device_properties(0).total_memory / 2**30 )
-    reserved = '{.2f}'.format( torch.cuda.memory_reserved(0) / 2**30 )
-    allocated = '{.2f}'.format( torch.cuda.memory_allocated(0) / 2**30 )
+    total_mem = '{:.2f}'.format( torch.cuda.get_device_properties(0).total_memory / 2**30 )
+    reserved = '{:.2f}'.format( torch.cuda.memory_reserved(0) / 2**30 )
+    allocated = '{:.2f}'.format( torch.cuda.memory_allocated(0) / 2**30 )
     return f"Reserved GPU memory: {reserved}/{total_mem}GiB\tAllocated memory: {allocated}/{reserved}GiB"
 
 
