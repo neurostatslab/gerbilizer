@@ -248,7 +248,7 @@ def build_config(config_name, job_id):
             'NUM_MICROPHONES': 4,
             'USE_BATCH_NORM': True,
             'DEVICE': 'GPU',
-            'ARCHITECTURE': 'GerbilizerHourglassNet',
+            'ARCHITECTURE': 'GerbilizerLSTM',
             'NUM_EPOCHS': 40,
             'TRAIN_BATCH_SIZE': 64,
             'MAX_LEARNING_RATE': 1e-1,
@@ -268,6 +268,9 @@ def build_config(config_name, job_id):
             
             'DILATION_LAYER_1': 1,
             'DILATION_LAYER_2': 1,
+
+            'LSTM_DEPTH': 2,
+            'LSTM_HIDDEN_SIZE': 256,
 
             'RESIZE_TO_N_CHANNELS': 16,
             
