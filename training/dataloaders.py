@@ -57,7 +57,7 @@ class GerbilVocalizationDataset(Dataset):
         # 8 - (1, 3) - cross-correlation of mic 1 and mic 3
         # 9 - (2, 3) - cross-correlation of mic 2 and mic 3
         #
-        sound = self.dataset['vocalizations'][idx][:] * 100
+        sound = self.dataset['vocalizations'][idx][:] * 2
         midpoint = sound.shape[1] // 2
         snip_len = 8192  # nearest power of 2 to 45ms
         sound = sound[..., midpoint - snip_len // 2 : midpoint + snip_len // 2]
