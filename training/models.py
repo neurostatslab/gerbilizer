@@ -38,7 +38,7 @@ def build_model(CONFIG):
     else:
         raise ValueError("ARCHITECTURE not recognized.")
 
-    if CONFIG["ARCHITECTURE"] in ("GerbilizerHourglassNet", "GerbilizerLSTM"):
+    if CONFIG["ARCHITECTURE"] in ("GerbilizerHourglassNet",):  # "GerbilizerLSTM"):
         def loss_function(output, label):
             log_label = torch.log(label.flatten(start_dim=1) + 1)
             flat_output = output.flatten(start_dim=1)
@@ -48,7 +48,7 @@ def build_model(CONFIG):
 
     else:
         def loss_function(x, y):
-            return torch.mean(torch.square(x - y), axis=-1)
+            return torch.sum(torch.square(x - y), axis=-1)
 
     return model, loss_function
 
@@ -445,7 +445,7 @@ class GerbilizerLSTM(nn.Module):
 
         self.post_lstm_dense = nn.Linear(
             lstm_hidden_size,
-            256 * config['RESIZE_TO_N_CHANNELS']
+            2
         )
 
         # Reshape the intermediate vector into an image
@@ -499,6 +499,14 @@ class GerbilizerLSTM(nn.Module):
         h_n = h_n[-1, ...]  # Take the hidden state from only the last layer
         upsample = self.post_lstm_dense(h_n)
 
+        width = 0.600 / 2
+        height = 0.400 / 2
+        # Cap output magnitude to known range
+        return torch.cat((
+            width * F.sigmoid(upsample[:, 0]),
+            height * F.sigmoid(upsample[:, 1])
+        ), dim=1)
+
         initial_image = upsample.reshape((-1, self.resize_channels, self.resize_height, self.resize_width))
         tc_output = initial_image
         for tc_layer, b_norm in zip(self.tc_layers, self.tc_b_norms):
@@ -509,3 +517,97 @@ class GerbilizerLSTM(nn.Module):
         squeezed = torch.squeeze(tc_output)
         # Convert to probability distribution
         return squeezed
+
+"""
+def _phase_shuffle(audio_tensor, n):
+    \""" Performs a phase shuffle of `n` samples.
+    See figure 3 of https://arxiv.org/pdf/1802.04208.pdf for details
+    \"""
+
+    shifted = torch.empty_like(audio_tensor)
+    # Whether the shift is to the left or right
+    direction = ( torch.rand(1)[0] > 0.5 ).item()
+    if direction:
+        # Shift samples to the left
+        shifted[..., :-n] = audio_tensor[..., n:]
+        filler = audio_tensor[..., -n-1:-1]
+        # Mirror the filler values
+        shifted[..., -n:] = torch.flip(filler, dims=(2,))
+    else:
+        # Shift samples to the right
+        shifted[..., n:] = audio_tensor[..., :-n]
+        filler = audio_tensor[..., 1:n+1]
+        shifted[..., :n] = torch.flip(filler, dims=(2,))
+    
+    return shifted
+
+
+class GerbilizerDiscriminator(nn.Module):
+    def __init__(
+        self, 
+        config: dict
+    ):
+        super().__init__()
+        n_mics = config['num_microphones']
+        multiplier = config['dimensionality_multiplier']
+
+        self.nonlin = nn.LeakyReLU(negative_slope=0.2)
+
+        kernel_size = config['conv_kernel_size']
+        # padding = config['conv_padding_size']
+        self.convs = nn.ModuleList()
+        self.nin = nn.ModuleList()
+
+        self.convs.append(
+            nn.Conv1d(
+                n_mics,
+                2 * multiplier,
+                dilation=32,
+                kernel_size=kernel_size,
+                padding='same'
+            )
+        )
+        self.nin.append(
+            nn.Conv1d(
+                2 * multiplier,
+                n_mics,
+                kernel_size=1,
+                padding='same'
+            )
+        )
+
+        for _ in range(9):
+            self.convs.append(
+                nn.Conv1d(
+                    n_mics,
+                    2 * multiplier,
+                    kernel_size=kernel_size,
+                    padding='same',
+                    stride=1
+                )
+            )
+            self.nin.append(
+                nn.Conv1d(
+                    2 * multiplier,
+                    n_mics,
+                    kernel_size=1,
+                    padding='same'
+                )
+            )
+
+        self.flatten = nn.Flatten()
+        self.dense = nn.Linear(n_mics * 16, 1)
+
+    def forward(self, x: Tensor) -> Tensor:
+        working_audio = x
+        for n, (conv, nin) in enumerate(zip( self.convs, self.nin )):
+            convolved = conv(working_audio)
+            working_audio = working_audio + self.nonlin(convolved)
+            working_audio = nin(working_audio)
+            if n < len(self.convs) - 1:
+                working_audio = _phase_shuffle(working_audio, 2)
+            working_audio = F.max_pool1d(working_audio, kernel_size=2, stride=2)
+        reshaped = self.flatten(working_audio)
+        output = self.dense(reshaped)
+        return output
+"""
