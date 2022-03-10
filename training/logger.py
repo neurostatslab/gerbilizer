@@ -180,6 +180,8 @@ class ProgressLogger:
         train_loss = self.train_accumulator.mean_loss
         val_loss = self.val_accumulator.mean_loss
 
+        self.val_accumulator.reset()
+
         with open(self.train_loss_filepath, "a") as f:
             f.write(f"{train_loss}\n")
 
