@@ -443,9 +443,16 @@ class GerbilizerLSTM(nn.Module):
             batch_first=True,
         )
 
-        self.post_lstm_dense = nn.Linear(
-            lstm_hidden_size,
-            2
+        self.post_lstm_dense = nn.Sequential(
+            nn.Linear(
+                lstm_hidden_size,
+                lstm_hidden_size
+            ),
+            nn.ReLU(),
+            nn.Linear(
+                lstm_hidden_size,
+                2
+            )
         )
 
         # Reshape the intermediate vector into an image
@@ -499,12 +506,12 @@ class GerbilizerLSTM(nn.Module):
         h_n = h_n[-1, ...]  # Take the hidden state from only the last layer
         upsample = self.post_lstm_dense(h_n)
 
-        width = 0.600 / 2
-        height = 0.400 / 2
+        width = 600 / 2
+        height = 400 / 2
         # Cap output magnitude to known range
-        return torch.cat((
-            width * F.sigmoid(upsample[:, 0]),
-            height * F.sigmoid(upsample[:, 1])
+        return torch.stack((
+            width * torch.sigmoid(upsample[:, 0]),
+            height * torch.sigmoid(upsample[:, 1])
         ), dim=1)
 
         initial_image = upsample.reshape((-1, self.resize_channels, self.resize_height, self.resize_width))

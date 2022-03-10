@@ -9,7 +9,7 @@ import torch
 from configs import build_config
 from models import build_model
 from dataloaders import build_dataloaders
-from augmentations import build_augmentations
+# from augmentations import build_augmentations
 from logger import ProgressLogger
 from sam import SAM
 
@@ -152,7 +152,10 @@ logging.info(
 )
 
 # Specifying data augmentations.
-augment = build_augmentations(CONFIG)
+# augment = build_augmentations(CONFIG)
+def augment(*args, **kwargs):
+    return args[0]
+
 
 # Move model to GPU, if desired.
 if CONFIG["DEVICE"] == "GPU":
@@ -199,6 +202,8 @@ def run_training(epoch_count, optimizer, model, loss_function, traindata):
     # === TRAIN FOR ONE EPOCH === #
     progress.start_training()
     model.train()
+    if CONFIG["DEVICE"] == "GPU":
+        logging.info(query_gpu_memory())
     for sounds, locations in traindata:
 
         # Don't process partial batches.
@@ -249,7 +254,6 @@ def run_training(epoch_count, optimizer, model, loss_function, traindata):
         progress.log_train_batch(
             reported_loss, np.nan, len(sounds)
         )
-        logging.info(query_gpu_memory())
 
 
 def run_validation(epoch_count, model, loss_function, valdata, best_loss):

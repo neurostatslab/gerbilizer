@@ -57,21 +57,23 @@ class GerbilVocalizationDataset(Dataset):
         # 8 - (1, 3) - cross-correlation of mic 1 and mic 3
         # 9 - (2, 3) - cross-correlation of mic 2 and mic 3
         #
-        sound = self.dataset['vocalizations'][idx][:]
-        midpoint = len(sound) // 2
-        snip_len = 125 * 45  # 45ms
-        # sound = sound[midpoint - snip_len // 2 : midpoint + snip_len // 2, ...]
+        sound = self.dataset['vocalizations'][idx][:] * 100
+        midpoint = sound.shape[1] // 2
+        snip_len = 8192  # nearest power of 2 to 45ms
+        sound = sound[..., midpoint - snip_len // 2 : midpoint + snip_len // 2]
         # TODO: Fold cross correlations into hourglass model
 
         # Load animal location in the environment.
         #
         # shape: (num_keypoints, 2 (x/y coordinates))
-        location_map = self.dataset['locations'][idx][:]
+        location_map = self.dataset['locations'][idx]
+        if len(location_map.shape) == 2:
+            location_map = location_map[0]
 
         # With p = 0.5, flip vertically
         if self.flip_vert and np.random.binomial(1, 0.5):
             # Assumes the center of the enclosure is (0, 0)
-            location_map = location_map[::-1, :]
+            location_map[1] *= -1
             # mic 0 -> mic 3
             # mic 1 -> mic 2
             # mic 2 -> mic 1
@@ -88,7 +90,7 @@ class GerbilVocalizationDataset(Dataset):
         # With p = 0.5, flip horizontally
         if self.flip_horiz and np.random.binomial(1, 0.5):
             # Assumes the center of the enclosure is (0, 0)
-            location_map = location_map[:, ::-1]
+            location_map[0] *= -1
             # mic 0 -> mic 1
             # mic 1 -> mic 0
             # mic 2 -> mic 3
