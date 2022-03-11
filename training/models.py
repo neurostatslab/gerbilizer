@@ -35,7 +35,7 @@ def build_model(CONFIG):
     else:
         raise ValueError("ARCHITECTURE not recognized.")
     
-   if CONFIG["ARCHITECTURE"] in ("GerbilizerHourglassNet",):  #aramis loss function update
+    if CONFIG["ARCHITECTURE"] in ("GerbilizerHourglassNet",):  #aramis loss function update
         def loss_function(output, label):
             log_label = torch.log(label.flatten(start_dim=1) + 1)
             flat_output = output.flatten(start_dim=1)
