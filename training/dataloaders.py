@@ -70,6 +70,9 @@ class GerbilVocalizationDataset(Dataset):
         if len(location_map.shape) == 2:
             location_map = location_map[0]
 
+        location_map[0] /= 300
+        location_map[1] /= 200
+
         # With p = 0.5, flip vertically
         if self.flip_vert and np.random.binomial(1, 0.5):
             # Assumes the center of the enclosure is (0, 0)
