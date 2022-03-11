@@ -308,6 +308,56 @@ def build_config(config_name, job_id):
             'TCONV_DILATION_LAYER_6': 0
         }
 
+    elif config_name == "ralph_simple":
+        CONFIG = {
+            "NUM_EPOCHS": 100,
+            "ARCHITECTURE": "GerbilizerSimpleNetwork",
+            "MAX_LEARNING_RATE": 1e-1,
+            "MIN_LEARNING_RATE": 1e-4,
+            "MOMENTUM": 0.9,
+            "DEVICE": "GPU",
+            "AUGMENT_DATA": False,
+
+            "NUM_CHANNELS_LAYER_1": 16,
+            "NUM_CHANNELS_LAYER_2": 16,
+            "NUM_CHANNELS_LAYER_3": 16,
+            "NUM_CHANNELS_LAYER_4": 32,
+            "NUM_CHANNELS_LAYER_5": 32,
+            "NUM_CHANNELS_LAYER_6": 32,
+            "NUM_CHANNELS_LAYER_7": 64,
+            "NUM_CHANNELS_LAYER_8": 64,
+            "NUM_CHANNELS_LAYER_9": 64,
+            "NUM_CHANNELS_LAYER_10": 128,
+            "NUM_CHANNELS_LAYER_11": 128,
+            "NUM_CHANNELS_LAYER_12": 128,
+
+            "FILTER_SIZE_LAYER_1": 11,
+            "FILTER_SIZE_LAYER_2": 11,
+            "FILTER_SIZE_LAYER_3": 11,
+            "FILTER_SIZE_LAYER_4": 7,
+            "FILTER_SIZE_LAYER_5": 7,
+            "FILTER_SIZE_LAYER_6": 7,
+            "FILTER_SIZE_LAYER_7": 7,
+            "FILTER_SIZE_LAYER_8": 7,
+            "FILTER_SIZE_LAYER_9": 7,
+            "FILTER_SIZE_LAYER_10": 7,
+            "FILTER_SIZE_LAYER_11": 7,
+            "FILTER_SIZE_LAYER_12": 7,
+
+            "DILATION_LAYER_1": 2,
+            "DILATION_LAYER_2": 2,
+            "DILATION_LAYER_3": 2,
+            "DILATION_LAYER_4": 2,
+            "DILATION_LAYER_5": 2,
+            "DILATION_LAYER_6": 2,
+            "DILATION_LAYER_7": 2,
+            "DILATION_LAYER_8": 2,
+            "DILATION_LAYER_9": 2,
+            "DILATION_LAYER_10": 2,
+            "DILATION_LAYER_11": 2,
+            "DILATION_LAYER_12": 2,
+        }    
+
 
     else:
         raise ValueError(
