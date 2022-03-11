@@ -233,6 +233,82 @@ def build_config(config_name, job_id):
             'TCONV_DILATION_LAYER_6': 0
         }
 
+    elif config_name == "ralph":
+        CONFIG = {
+            'NUM_MICROPHONES': 10, #hilbert transforms + xcorrs
+            'NUM_CONV_LAYERS': 5,
+            'USE_BATCH_NORM': True,
+            'DEVICE': 'GPU',
+            'ARCHITECTURE': 'GerbilizerHourglassNet',
+            'NUM_EPOCHS': 100,
+            "AUGMENT_DATA": False,
+            'TRAIN_BATCH_SIZE': 8,
+            'SINKHORN_EPSILON': 1e-2,
+            'SINKHORN_MAX_ITER': 60,
+            "MAX_LEARNING_RATE": 1e-1,
+            "MIN_LEARNING_RATE": 1e-4,
+            "MOMENTUM": 0.9,
+            
+            'NUM_CHANNELS_LAYER_1': 4,
+            'NUM_CHANNELS_LAYER_2': 16,
+            'NUM_CHANNELS_LAYER_3': 64,
+            'NUM_CHANNELS_LAYER_4': 256,
+            'NUM_CHANNELS_LAYER_5': 1024,
+            
+            'STRIDE_LAYER_1': 1,
+            'STRIDE_LAYER_2': 2,
+            'STRIDE_LAYER_3': 2,
+            'STRIDE_LAYER_4': 2,
+            'STRIDE_LAYER_5': 4,
+            
+            'FILTER_SIZE_LAYER_1': 256,
+            'FILTER_SIZE_LAYER_2': 128,
+            'FILTER_SIZE_LAYER_3': 64,
+            'FILTER_SIZE_LAYER_4': 32,
+            'FILTER_SIZE_LAYER_5': 16,
+            
+            'DILATION_LAYER_1': 1,
+            'DILATION_LAYER_2': 2,
+            'DILATION_LAYER_3': 4,
+            'DILATION_LAYER_4': 8,
+            'DILATION_LAYER_5': 16,
+            
+            
+            'RESIZE_TO_N_CHANNELS': 16,
+
+            
+            'NUM_TCONV_LAYERS': 5,
+            
+            'TCONV_CHANNELS_LAYER_1': 16,
+            'TCONV_CHANNELS_LAYER_2': 8,
+            'TCONV_CHANNELS_LAYER_3': 4,
+            'TCONV_CHANNELS_LAYER_4': 2,
+            'TCONV_CHANNELS_LAYER_5': 1,
+            'TCONV_CHANNELS_LAYER_6': 0,
+            
+            'TCONV_FILTER_SIZE_LAYER_1': 4,
+            'TCONV_FILTER_SIZE_LAYER_2': 4,
+            'TCONV_FILTER_SIZE_LAYER_3': 4,
+            'TCONV_FILTER_SIZE_LAYER_4': 4,
+            'TCONV_FILTER_SIZE_LAYER_5': 4,
+            'TCONV_FILTER_SIZE_LAYER_6': 0,
+            
+            'TCONV_STRIDE_LAYER_1': 2,
+            'TCONV_STRIDE_LAYER_2': 2,
+            'TCONV_STRIDE_LAYER_3': 2,
+            'TCONV_STRIDE_LAYER_4': 2,
+            'TCONV_STRIDE_LAYER_5': 2,
+            'TCONV_STRIDE_LAYER_6': 0,
+            
+            'TCONV_DILATION_LAYER_1': 1,
+            'TCONV_DILATION_LAYER_2': 1,
+            'TCONV_DILATION_LAYER_3': 1,
+            'TCONV_DILATION_LAYER_4': 1,
+            'TCONV_DILATION_LAYER_5': 1,
+            'TCONV_DILATION_LAYER_6': 0
+        }
+
+
     else:
         raise ValueError(
             f"'{config_name}' was not recognized as a "
