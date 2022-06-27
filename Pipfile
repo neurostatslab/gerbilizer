@@ -10,11 +10,16 @@ torchvision = "*"
 torchaudio = "*"
 scipy = "*"
 h5py = "*"
-matplotlib = "*"
+matplotlib = "==3.5.1"
 tqdm = "*"
 torch-audiomentations = "*"
 ipython = "*"
 notebook = "*"
+appnope = "*"
+ipympl = "*"
+ipywidgets = "*"
+pyroomacoustics = "*"
+muse = {ref = "speed-up-jackknife", git = "https://github.com/ralphpeterson/muse-python.git"}
 
 [dev-packages]
 
