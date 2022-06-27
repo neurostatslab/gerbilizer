@@ -180,8 +180,10 @@ def generate_dataset(
     """
     # set up points at which to simulate audio sources
     num_pts = int(1 / speaker_spacing)
-    xcoords = np.linspace(0, X_DIM, num_pts)
-    ycoords = np.linspace(0, Y_DIM, num_pts)
+    # add some offset so the points aren't directly on the pyroom wall
+    offset = 0.1
+    xcoords = np.linspace(offset, X_DIM-offset, num_pts)
+    ycoords = np.linspace(offset, Y_DIM-offset, num_pts)
 
     results = []
     for x in xcoords:
