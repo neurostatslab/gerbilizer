@@ -14,3 +14,6 @@ __pycache__/
 trained_models/
 slurm_logs/
 .vscode/
+
+# Pickled files
+*.pickle
