@@ -83,3 +83,4 @@ def calibration_curve(
     use_to_plot = ax if ax else plt
     use_to_plot.scatter(bin_edges[1:], observed_props)
     use_to_plot.plot([0, 1], [0, 1], color='grey', linestyle='dashed')
+    return bin_edges[1:], observed_props
