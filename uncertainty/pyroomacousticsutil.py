@@ -1,7 +1,7 @@
 """Utility functions to help set up pyroomacoustics with MUSE."""
 from collections import namedtuple
 from collections.abc import Sequence
-from typing import Iterable, List, Tuple
+from typing import Iterable, List, Mapping, Tuple
 
 import librosa
 import numpy as np
@@ -15,6 +15,7 @@ def generate_room(
     x_dim: float,
     y_dim: float,
     z_dim: float,
+    wall_materials: Mapping[str, str] = None,
     sampling_rate=125000
 ) -> pra.Room:
     """
@@ -26,14 +27,17 @@ def generate_room(
     """
     # Materials of the room's walls
     # See different materials at https://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.materials.database.html
-    materials = pra.make_materials(
-        ceiling = "fibre_absorber_2",
-        floor   = "fibre_absorber_2",
-        east    = "hard_surface",
-        west    = "hard_surface",
-        north   = "hard_surface",
-        south   = "hard_surface"
-    )
+    if not wall_materials:
+        materials = pra.make_materials(
+            ceiling = "fibre_absorber_2",
+            floor   = "fibre_absorber_2",
+            east    = "hard_surface",
+            west    = "hard_surface",
+            north   = "hard_surface",
+            south   = "hard_surface"
+        )
+    else:
+        materials = pra.make_materials(**wall_materials)
     
     shoebox_object = pra.ShoeBox(
         [x_dim, y_dim, z_dim],
@@ -141,7 +145,8 @@ SimulatedSignal = namedtuple('SimulatedSignal', [
 def simulate_signals(
     stimuli: Iterable[np.ndarray],
     sample_rates: Iterable[float],
-    speaker_position: Tuple[float]
+    speaker_position: Tuple[float],
+    wall_materials: Mapping[str, str] = None,
     ) -> List[Tuple]:
     """
     Given iterables of stimuli, their associated sample rates, and
@@ -150,7 +155,7 @@ def simulate_signals(
     """
     signals = []
     for stimulus, sr in zip(stimuli, sample_rates):
-        room = generate_room(X_DIM, Y_DIM, Z_DIM)
+        room = generate_room(X_DIM, Y_DIM, Z_DIM, wall_materials=wall_materials)
         place_mics(room, MIC_POS)
         # add the given stimulus to the room at the specified position
         add_source(speaker_position, stimulus, sr, room)
@@ -167,6 +172,7 @@ def generate_dataset(
     stimuli: Iterable[np.ndarray],
     sample_rates: Iterable[float],
     speaker_spacing: float,
+    wall_materials: Mapping[str, str] = None,
     speaker_height=0.01,
     ):
     """
@@ -188,5 +194,8 @@ def generate_dataset(
     results = []
     for x in xcoords:
         for y in ycoords:
-            results += simulate_signals(stimuli, sample_rates, (x, y, speaker_height))
+            results += simulate_signals(
+                stimuli, sample_rates, (x, y, speaker_height),
+                wall_materials=wall_materials
+                )
     return results
