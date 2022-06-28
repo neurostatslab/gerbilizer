@@ -70,6 +70,7 @@ def calibration_curve(
     true_coords,
     xgrid,
     ygrid,
+    ax = None,
     n_bins=10
     ):
     s = f_2d(model_output, true_coords, xgrid, ygrid)
@@ -79,6 +80,6 @@ def calibration_curve(
         range=(0, 1)
     )
     observed_props = counts.cumsum() / counts.sum()
-    plt.scatter(bin_edges[1:], observed_props)
-    plt.plot([0, 1], [0, 1], color='grey', linestyle='dashed')
-    plt.show()
+    use_to_plot = ax if ax else plt
+    use_to_plot.scatter(bin_edges[1:], observed_props)
+    use_to_plot.plot([0, 1], [0, 1], color='grey', linestyle='dashed')
