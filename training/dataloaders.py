@@ -11,7 +11,7 @@ from typing import Optional, Tuple
 import h5py
 import numpy as np
 from scipy.signal import correlate
-from torch import randint
+import torch
 from torch.utils.data import Dataset, DataLoader
 
 
@@ -94,14 +94,14 @@ class GerbilVocalizationDataset(Dataset):
             # If section_len is longer than the audio we're sampling from, randomly place the entire
             # audio sample within a block of zeros of length section_len
             padding = np.zeros((audio.shape[1], section_len))
-            offset = randint(-margin, margin, (1,)).item()
+            offset = torch.randint(-margin, margin, (1,)).item()
             end = min(audio.shape[0] + offset, section_len)
             if offset < 0:
                 padding[:, :end] = audio[-offset:end-offset, :].T
             else:
                 padding[:, offset:end] = audio[:end-offset, :].T
             return padding
-        start = randint(*idx_range, (1,)).item()
+        start = torch.randint(*idx_range, (1,)).item()
         end = start + section_len
         return audio[start:end, ...].T
 
@@ -198,7 +198,10 @@ class GerbilVocalizationDataset(Dataset):
         """
         x_scale = arena_dims[0] / 2
         y_scale = arena_dims[1] / 2
-        scaled_labels = np.empty_like(labels)
+        if isinstance(labels, torch.Tensor):
+            scaled_labels = torch.empty_like(labels)
+        else:
+            scaled_labels = np.empty_like(labels)
         scaled_labels[..., 0] = labels[..., 0] * x_scale / 10
         scaled_labels[..., 1] = labels[..., 1] * y_scale / 10
         return scaled_labels
