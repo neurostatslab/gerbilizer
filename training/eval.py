@@ -87,7 +87,7 @@ def run():
 
         preds = dest.create_dataset(
             'predictions',
-            shape=(n_vox, 2),
+            shape=(n_vox, test_set.samp_size, 2),
             dtype=np.float32
         )
         vars = dest.create_dataset(
@@ -119,7 +119,7 @@ def run():
                 distances = np.sqrt( ((centroid[None, ...] - centimeter_output)**2).sum(axis=-1) )  # Should have shape (30,)
                 dist_spread = distances.std()
                 # preds[idx:idx+n_added] = centimeter_output
-                preds[idx] = centroid
+                preds[idx] = centimeter_output
                 vars[idx] = dist_spread
                 idx += n_added
 

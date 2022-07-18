@@ -106,8 +106,10 @@ class GerbilizerAttentionNet(nn.Module):
         transformer_out = self.transformer(encoded)[:, 0, :]
         return self.dense(transformer_out)
 
-    def forward(self, x):
+    def forward(self, x, * , return_embedding=False):
         linear_out = self.embed(x)
+        if return_embedding:
+            return self.coord_readout(linear_out), linear_out.detach().clone()
         return self.coord_readout(linear_out)
     
     def trainable_params(self):

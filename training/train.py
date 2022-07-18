@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 
+from architectures.tcp import TCP
 from augmentations import build_augmentations
 from configs import build_config_from_file, build_config_from_name
 from dataloaders import build_dataloaders, GerbilVocalizationDataset
@@ -124,6 +125,9 @@ class Trainer():
         self._datafile = datafile
         self._config = config_data
         self._job_id = job_id
+
+        self.tcp = None
+        self.tcp_optim = None
         
         if not self._eval:
             self._setup_dataloaders()
@@ -150,9 +154,13 @@ class Trainer():
         logger.info(f">> SETTING NEW LEARNING RATE: {new_lr}")
         for param_group in self.optim.param_groups:
             param_group['lr'] = new_lr
+        if self.tcp_optim is not None:
+            self.tcp_optim.param_groups[0]['lr'] = new_lr
 
+        arena_dims = (self._config['ARENA_WIDTH'], self._config['ARENA_LENGTH'])
         self.progress_log.start_training()
         self.model.train()
+        self.tcp.train()
         for sounds, locations in self.traindata:
             # Don't process partial batches.
             if len(sounds) != self._config["TRAIN_BATCH_SIZE"]:
@@ -165,13 +173,28 @@ class Trainer():
 
             # Prepare optimizer.
             self.optim.zero_grad()
+            if self.tcp_optim is not None:
+                self.tcp_optim.zero_grad()
 
             # Forward pass, including data augmentation.
             aug_input = self._augment(sounds, sample_rate=125000) if self._config['AUGMENT_DATA'] else sounds
-            outputs = self.model(aug_input)
+            if self.tcp is not None:
+                outputs, embedding = self.model(aug_input, return_embedding=True)
+                tcp_output = self.tcp(embedding)
+            else:
+                outputs = self.model(aug_input)
 
             # Compute loss.
             losses = self._loss_fn(outputs, locations)
+            if self.tcp is not None:
+                pred_cm = GerbilVocalizationDataset.unscale_features(outputs.detach().clone(), arena_dims)
+                label_cm = GerbilVocalizationDataset.unscale_features(locations, arena_dims)
+                # Bypass the mse loss in favor of mean error
+                tcp_target = torch.sqrt(((label_cm - pred_cm) ** 2).sum(axis=-1))
+                tcp_loss = torch.mean((tcp_target - tcp_output) ** 2)
+                tcp_loss.backward()
+                self.tcp_optim.step()
+
             mean_loss = torch.mean(losses)
 
             # Backwards pass.
@@ -193,16 +216,22 @@ class Trainer():
     def eval_validation(self):
         self.progress_log.start_testing()
         self.model.eval()
+        self.tcp.eval()
         arena_dims = (self._config['ARENA_WIDTH'], self._config['ARENA_LENGTH'])
         with torch.no_grad():
             for sounds, locations in self.valdata:
                 # Move data to gpu
                 if self._config["DEVICE"] == "GPU":
                     sounds = sounds.cuda()
-                    # locations = locations.cuda()
+                    locations = locations.cuda()
 
                 # Forward pass.
-                outputs = self.model(sounds).cpu()
+                if self.tcp is not None:
+                    outputs, embedding = self.model(sounds, return_embedding=True)
+                    tcp_output = self.tcp(embedding).cpu().numpy()
+                else:
+                    outputs = self.model(sounds)
+
 
                 # Convert outputs and labels to centimeters from arb. unit
                 # But only if the outputs are x,y coordinate pairs
@@ -210,11 +239,18 @@ class Trainer():
                     pred_cm = GerbilVocalizationDataset.unscale_features(outputs, arena_dims)
                     label_cm = GerbilVocalizationDataset.unscale_features(locations, arena_dims)
 
-                    # Bypass the mse loss in favor of mean error
-                    mean_loss = np.sqrt(((label_cm - pred_cm) ** 2).sum(axis=-1)).mean()
+                    if self.tcp is not None:
+                        # Bypass the mse loss in favor of mean error
+                        pred_cm = GerbilVocalizationDataset.unscale_features(outputs, arena_dims)
+                        label_cm = GerbilVocalizationDataset.unscale_features(locations, arena_dims)
+
+                        mean_loss = torch.sqrt(((label_cm - pred_cm) ** 2).sum(axis=-1)).cpu().numpy()
+                        for a, b in zip(mean_loss.ravel(), tcp_output.ravel()):
+                            logger.info('Minibatch mean loss: {:.1f}. TCP predicted: {:.1f}'.format(a, b))
+                        mean_loss = mean_loss.mean()
                 else:
                     losses = self._loss_fn(outputs, locations)
-                    mean_loss = torch.mean(losses).item()
+                    mean_loss = torch.mean(losses).cpu().item()
 
                 # Log progress
                 self.progress_log.log_val_batch(
@@ -357,6 +393,35 @@ class Trainer():
         logger.info(f"Training set:\t{self.traindata.dataset}")
         logger.info(f"Validation set:\t{self.valdata.dataset}")
         logger.info(f"Test set:\t{self.testdata.dataset}")
+    
+    def _setup_tcp(self):
+        inp_dimension = self._config['TCP_IN_DIM']
+        num_layers = self._config['TCP_N_LAYERS']
+        num_hidden = self._config['TCP_N_HIDDEN']
+        self.tcp = TCP(inp_dimension, num_layers, num_hidden, dropout=0.5)
+        if torch.cuda.is_available():
+            self.tcp.cuda()
+
+        if self._config['OPTIMIZER'] == 'SGD':
+            base_optim = torch.optim.SGD
+            optim_args = {
+                'momentum': self._config['MOMENTUM'],
+                'weight_decay': self._config['WEIGHT_DECAY']
+            }
+        elif self._config['OPTIMIZER'] == 'ADAM':
+            base_optim = torch.optim.Adam
+            optim_args = {
+                'betas': (self._config['ADAM_BETA1'], self._config['ADAM_BETA2'])
+            }
+        else:
+            raise NotImplementedError(f'Unrecognized optimizer "{self._config["OPTIMIZER"]}"')
+
+        params = self.tcp.parameters()
+        self.tcp_optim = base_optim(
+            params,
+            lr=0.0, # this is set manually at the start of each epoch.
+            **optim_args
+        )
 
 
     def _get_lr(self, epoch_num: int) -> float:
@@ -421,6 +486,8 @@ class Trainer():
 
         # Use new ID to create model folder
         trainer = cls(finetune_data, config, config['JOB_ID'], eval_mode=(finetune_data is None))
+        if finetune_data is not None:
+            trainer._setup_tcp()
 
         if 'WEIGHTS_PATH' in config:
             weight_file = config['WEIGHTS_PATH']

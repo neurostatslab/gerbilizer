@@ -61,7 +61,7 @@ def build_model(CONFIG):
 # and the ground truth as the second argument
 def se_loss_fn(pred, target):
     # Assumes the inputs have shape (B, 2), representing a batch of `B` 2-dimensional coordinates
-    return 2 * torch.mean(torch.square(target - pred))  # Should be a scalar tensor
+    return torch.sum(torch.square(target - pred), dim=-1)  # Should be a scalar tensor
 
 def map_se_loss_fn(pred, target):
     """ MSE loss over a location map.
