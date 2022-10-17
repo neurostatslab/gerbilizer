@@ -11,7 +11,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 
 # from augmentations import build_augmentations
-from ..training.dataloaders import build_dataloaders, GerbilVocalizationDataset
+from ..training.dataloaders import build_dataloaders, VarlenDataset
 from ..training.logger import ProgressLogger
 from ..training.models import build_model
 
@@ -63,7 +63,6 @@ class Trainer:
 
         if not self.__eval:
             self.__init_output_dir()
-            self.__init_dataloaders()
 
         self.__init_model()
 
@@ -191,10 +190,8 @@ class Trainer:
         self.__progress_log.start_training()
         self.model.train()
         for sounds, locations in self.__traindata:
-            # Don't process partial batches.
-            if len(sounds) != self.__config["TRAIN_BATCH_SIZE"]:
-                break
-
+            if sounds.dim() == 4:
+                sounds = sounds.squeeze(0)
             # Move data to gpu, if desired.
             if self.__config["DEVICE"] == "GPU":
                 sounds = sounds.cuda()
@@ -219,7 +216,7 @@ class Trainer:
             self.__optim.step()
 
             # Count batch as completed.
-            self.__progress_log.log_train_batch(mean_loss.item(), np.nan, len(sounds))
+            self.__progress_log.log_train_batch(mean_loss.item(), np.nan, sounds.shape[-2] * sounds.shape[0])
         self.__scheduler.step()
 
     def eval_validation(self):
@@ -229,6 +226,8 @@ class Trainer:
         if self.__valdata is not None:
             with torch.no_grad():
                 for sounds, locations in self.__valdata:
+                    if sounds.dim() == 4:
+                        sounds = sounds.squeeze(0)
                     # Move data to gpu
                     if self.__config["DEVICE"] == "GPU":
                         sounds = sounds.cuda()
@@ -239,10 +238,10 @@ class Trainer:
                     # Convert outputs and labels to centimeters from arb. unit
                     # But only if the outputs are x,y coordinate pairs
                     if outputs.dim() == 2 and outputs.shape[1] == 2:
-                        pred_cm = GerbilVocalizationDataset.unscale_features(
+                        pred_cm = VarlenDataset.unscale_features(
                             outputs, arena_dims
                         )
-                        label_cm = GerbilVocalizationDataset.unscale_features(
+                        label_cm = VarlenDataset.unscale_features(
                             locations, arena_dims
                         )
 
@@ -255,7 +254,7 @@ class Trainer:
                         mean_loss = torch.mean(losses).item()
 
                     # Log progress
-                    self.__progress_log.log_val_batch(mean_loss, np.nan, len(sounds))
+                    self.__progress_log.log_val_batch(mean_loss, np.nan, sounds.shape[-2] * sounds.shape[0])
 
             # Done with epoch.
             val_loss = self.__progress_log.finish_epoch()
@@ -276,7 +275,6 @@ class Trainer:
         self,
         dataset: Union[str, h5py.File],
         arena_dims: Tuple[float, float],
-        samples_per_vocalization: int = 1,
     ) -> Generator[np.ndarray, None, None]:
         """Creates an iterator to perform inference on a given dataset
         Parameters:
@@ -290,17 +288,14 @@ class Trainer:
             dataset = h5py.File(dataset, "r")
             should_close_file = True
 
-        dset = GerbilVocalizationDataset(
+        dset = VarlenDataset(
             datapath=dataset,
-            segment_len=self.__config["SAMPLE_LEN"],
             make_xcorrs=self.__config["COMPUTE_XCORRS"],
             arena_dims=arena_dims,
             inference=True,
         )
 
-        dset.samp_size = samples_per_vocalization
-
-        dloader = DataLoader(dset, batch_size=1, shuffle=False)
+        dloader = DataLoader(dset)
 
         self.model.eval()
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -308,14 +303,9 @@ class Trainer:
         with torch.no_grad():
             for batch in dloader:
                 data = batch  # (1, channels, seq)
-                if samples_per_vocalization > 1:
-                    data = data.squeeze(
-                        0
-                    )  # (1, batch, channels, seq) -> (batch, channels, seq)
-
                 output = self.model(data.to(device)).cpu().numpy()
                 if arena_dims is not None:
-                    output = GerbilVocalizationDataset.unscale_features(
+                    output = VarlenDataset.unscale_features(
                         output, arena_dims=arena_dims
                     )
                 yield output

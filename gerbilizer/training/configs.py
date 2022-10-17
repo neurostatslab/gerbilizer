@@ -14,10 +14,8 @@ DEFAULT_CONFIG = {
     "LOG_INTERVAL": 3,  # seconds between each addition to the training log
     "NUM_MICROPHONES": 4,  # not including xcorrs
     "COMPUTE_XCORRS": False,  # Append pair-wise cross-correlations of input audio. O(n^2) space requirement
-    "NUM_AUDIO_SAMPLES": 10000,
-    "AUDIO_SAMPLE_RATE": 125000,
-    "ARENA_WIDTH": 600,  # Size of enclosure along x axis
-    "ARENA_LENGTH": 400,  # Size of enclosure along y axis
+    "ARENA_WIDTH": 558.8,  # Size of enclosure along x axis
+    "ARENA_LENGTH": 355.6,  # Size of enclosure along y axis
     # Training hyperparameters.
     "NUM_EPOCHS": 20,
     "TRAIN_BATCH_SIZE": 64,

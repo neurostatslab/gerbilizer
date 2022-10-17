@@ -120,25 +120,19 @@ def run_eval(args: argparse.Namespace, trainer: Trainer):
     with h5py.File(dest_path, "w") as dest:
         # Copy true locations, if available
         with h5py.File(data_path, "r") as source:
-            n_vox = (
-                len(source["len_idx"]) - 1
-                if "len_idx" in source
-                else len(source["vocalizations"])
-            )
+            n_vox = (len(source["len_idx"]) - 1)
             if "locations" in source:
                 source.copy(source["locations"], dest["/"], "locations")
             if "room_dims" in source:
                 arena_dims = None
                 source.copy(source["room_dims"], dest["/"], "room_dims")
 
-        shape = (n_vox, 2) if samps_per_vox == 1 else (n_vox, samps_per_vox, 2)
+        shape = (n_vox, 2)
         preds = dest.create_dataset("predictions", shape=shape, dtype=np.float32)
 
         start_time = time.time()
         for n, result in enumerate(
-            trainer.eval_on_dataset(
-                data_path, arena_dims=arena_dims, samples_per_vocalization=samps_per_vox
-            )
+            trainer.eval_on_dataset(data_path, arena_dims=arena_dims)
         ):
             preds[n] = result.squeeze()
             if (n + 1) % 100 == 0:

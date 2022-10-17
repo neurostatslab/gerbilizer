@@ -154,7 +154,8 @@ class GerbilizerPerceiver(nn.Module):
         dilation = config["PERCEIVER_DILATION"]
         attn_steps = config["PERCEIVER_ATTN_STEPS_PER_CONV"]
 
-        max_seq_len = config["SAMPLE_LEN"]
+        max_seq_len = config["MAX_SEQ_LEN"]
+        
         if use_learned_encoding:
             self.pos_encoding = LearnedEncoding(
                 d_model=d_model, max_seq_len=max_seq_len, transpose=True
@@ -197,7 +198,8 @@ class GerbilizerPerceiver(nn.Module):
         return self.parameters()
 
     def forward(self, x):
-        # x shape: (batch, channels, seq_len)
+        x = x.transpose(-1, -2)
+        # x new shape: (batch, channels, seq_len)
         memory = torch.randn(
             (x.shape[0], self.memory_size, self.d_model), dtype=x.dtype, device=x.device
         )

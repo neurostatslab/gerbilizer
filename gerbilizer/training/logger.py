@@ -58,8 +58,8 @@ class ProgressLogger:
     ):
 
         self.num_epochs = num_epochs
-        self.num_train_images = len(traindata.dataset)
-        self.num_val_images = len(valdata.dataset)
+        self.num_train_images = traindata.dataset.max_returned_samples
+        self.num_val_images = valdata.dataset.max_returned_samples
         self.log_interval = log_interval
         self.epochcount = 0
         self.epoch_start_time = None
