@@ -106,7 +106,6 @@ def run_eval(args: argparse.Namespace, trainer: Trainer):
     # expects args.data to point toward a file rather than a directory
     # In this case, all three h5py.File objects held by the Trainer are None
     data_path = args.data
-    samps_per_vox = 1
     arena_dims = args.config_data["ARENA_WIDTH"], args.config_data["ARENA_LENGTH"]
     if not (data_path.endswith(".h5") or data_path.endswith(".hdf5")):
         raise ValueError(
