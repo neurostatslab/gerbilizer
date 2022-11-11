@@ -1,7 +1,7 @@
-from math import comb
+from math import ceil, comb
 from typing import Optional
 
-from numpy import sqrt
+import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -9,7 +9,8 @@ from torch.nn.parameter import Parameter
 
 from gerbilizer.architectures.simplenet import GerbilizerSimpleLayer
 
-from .encodings import FixedEncoding, LearnedEncoding
+from .encodings import FixedEncoding, LearnedEncoding, LearnedImageEncoding
+from ..training.dataloaders import VarlenDataset
 
 
 class PerceiverLayer(nn.Module):
@@ -81,7 +82,7 @@ class PerceiverLayer(nn.Module):
         if key is not value:
             raise ValueError("Expects key and value to be the same Tensor")
 
-        scale_factor = sqrt(1 / d_model)
+        scale_factor = np.sqrt(1 / d_model)
         Q = (
             torch.matmul(query, self.q_proj_weight) + self.q_proj_bias[None, None, :]
         )  # Has shape (batch, M, d_model)
@@ -142,6 +143,8 @@ class GerbilizerPerceiver(nn.Module):
         if config["COMPUTE_XCORRS"]:
             n_mics += comb(n_mics, 2)
 
+        self.cell_size = config['CELL_SIZE']
+
         d_model = config[f"TRANSFORMER_D_MODEL"]
         self.d_model = d_model
         n_attn_heads = config["N_ATTENTION_HEADS"]
@@ -164,6 +167,12 @@ class GerbilizerPerceiver(nn.Module):
             self.pos_encoding = FixedEncoding(
                 d_model=d_model, max_len=max_seq_len, transpose=True
             )
+        
+        memory_width = int(ceil(config['ARENA_WIDTH'] / self.cell_size))
+        memory_height = int(ceil(config['ARENA_LENGTH'] / self.cell_size))
+        self.memory_encoding = LearnedImageEncoding(
+            d_model=d_model, max_width=memory_width, max_height=memory_height
+        )
 
         layers = [
             PerceiverLayer(
@@ -188,7 +197,7 @@ class GerbilizerPerceiver(nn.Module):
         self.layers = nn.ModuleList(layers)
 
         self.linear = nn.Sequential(
-            nn.Linear(d_model, 1024), nn.ReLU(), nn.Linear(1024, 2)
+            nn.Linear(d_model, 1024), nn.ReLU(), nn.Linear(1024, 1), nn.Softmax(dim=-2)
         )
 
     def clip_grads(self):
@@ -197,15 +206,61 @@ class GerbilizerPerceiver(nn.Module):
     def trainable_params(self):
         return self.parameters()
 
-    def forward(self, x):
+    def forward(self, x, arena_dims):
         x = x.transpose(-1, -2)
+        if arena_dims.dim() > 1:
+            arena_dims = arena_dims[0]
         # x new shape: (batch, channels, seq_len)
+        memory_width = int(ceil(arena_dims[0].item() / self.cell_size))
+        memory_height = int(ceil(arena_dims[1].item() / self.cell_size))
+
         memory = torch.randn(
-            (x.shape[0], self.memory_size, self.d_model), dtype=x.dtype, device=x.device
+            (x.shape[0], memory_height, memory_width, self.d_model), dtype=x.dtype, device=x.device
         )
+        memory = self.memory_encoding(memory).view(x.shape[0], -1, self.d_model)
 
         for layer in self.layers:
             memory, x = layer(memory, x)
-
-        output = self.linear(memory[:, 0])
+        
+        output = self.linear(memory).squeeze(-1).view(x.shape[0], memory_height, memory_width)
         return output
+
+    def targets_for_labels(self, labels, dims):
+        return GerbilizerPerceiver.loss_map_for_location(labels, dims, self.cell_size)
+    
+    @staticmethod
+    def loss_map_for_location(true_loc, arena_dims, cell_size):
+        # arena_dims: 2-element sequence or (2,) array of arena dimensions
+        # cell_size: scalar, same units as arena_dims
+        # true_loc: 2-element sequence or (2,) array of true locations
+        if not isinstance(true_loc, np.ndarray) and not isinstance(true_loc, torch.Tensor):
+            true_loc = np.array(true_loc)
+            true_loc = torch.from_numpy(true_loc)
+        elif isinstance(true_loc, np.ndarray):
+            true_loc = torch.from_numpy(true_loc)
+        if not isinstance(arena_dims, np.ndarray) and not isinstance(true_loc, torch.Tensor):
+            arena_dims = np.array(arena_dims)
+            arena_dims = torch.from_numpy(arena_dims)
+        elif isinstance(arena_dims, np.ndarray):
+            arena_dims = torch.from_numpy(arena_dims)
+        
+        if arena_dims.dim() == 2:
+            arena_dims = arena_dims[0]  # Cannot have maps of different size residing in the same tensor
+        arena_dims = arena_dims.to(true_loc.device)
+
+        # forgot to unscale
+        true_loc = VarlenDataset.unscale_features(true_loc, arena_dims)
+        true_loc = true_loc + arena_dims / 2  # Move origin from center to corner
+        print(true_loc)
+
+        arena_width, arena_height = torch.ceil(arena_dims / cell_size).int()
+        # Compute the midpoints of each square cell
+        x_coords = (cell_size / 2) + torch.arange(arena_width, device=true_loc.device) * cell_size
+        y_coords = (cell_size / 2) + torch.arange(arena_height, device=true_loc.device) * cell_size
+        # creates an array of x-y coord pairs, with dims 0 and 1 corresponding
+        # to the height and width dims of the image
+        cell_centers = torch.stack(torch.meshgrid(x_coords, y_coords, indexing='xy'), axis=-1)
+        dists = torch.sqrt(((true_loc[:, None, None, :] - cell_centers[None, ...]) ** 2).sum(axis=-1))
+        dists += dists.min(dim=-1, keepdim=True).values.min(dim=-2, keepdim=True).values
+        dists /= dists.max(dim=-1, keepdim=True).values.max(dim=-2, keepdim=True).values
+        return dists

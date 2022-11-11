@@ -45,8 +45,11 @@ def wass_loss_fn(pred: torch.Tensor, target: torch.Tensor):
     flat_pred = torch.flatten(pred, start_dim=1)
     flat_target = torch.flatten(target, start_dim=1)
     # Add 1 to target to make the smallest value 0
-    error_map = F.log_softmax(flat_pred, dim=1) + torch.log(flat_target + 1)
-    return torch.logsumexp(error_map, dim=1)
+    # error_map = F.log_softmax(flat_pred, dim=1) + torch.log(flat_target + 1)
+    # return torch.logsumexp(error_map, dim=1)
+    entropy = -(flat_pred * torch.log(flat_pred)).sum(dim=1)
+    entropy_coeff = 0.1
+    return (flat_pred * flat_target).sum(dim=1) - entropy_coeff * entropy
 
 
 lookup_table = {
@@ -61,7 +64,7 @@ lookup_table = {
     "GerbilizerAttentionHourglassNet": model_type(
         GerbilizerAttentionHourglassNet, map_se_loss_fn
     ),
-    "GerbilizerPerceiver": model_type(GerbilizerPerceiver, se_loss_fn),
+    "GerbilizerPerceiver": model_type(GerbilizerPerceiver, wass_loss_fn),
 }
 
 

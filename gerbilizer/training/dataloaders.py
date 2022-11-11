@@ -6,7 +6,7 @@ objects and specify data augmentation.
 from itertools import combinations
 from math import comb
 import os
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import h5py
 import numpy as np
@@ -25,7 +25,7 @@ class VarlenDataset(IterableDataset):
         sequential: bool = False,
         arena_dims: Optional[Tuple[float, float]] = None,
         max_padding: int = 64,
-        max_batch_size: int = 125 * 20 * 32,
+        max_batch_size: int = 125 * 30 * 32,
     ):
         """A dataloader designed to return batches of vocalizations with similar lengths
 
@@ -77,21 +77,25 @@ class VarlenDataset(IterableDataset):
                 cur_batch_size += self.lengths[self.len_idx[end_idx]]
                 end_idx += 1
             
+            arena_dims = []
             batch = []
             labels = []
             for i in range(start_idx, end_idx):
                 real_idx = self.len_idx[i]
                 if self.inference:
-                    batch.append(self.__processed_data_for_index__(real_idx))
+                    a_dim, audio = self.__processed_data_for_index__(real_idx)
+                    arena_dims.append(a_dim)
+                    batch.append(audio)
                 else:
-                    audio, label = self.__processed_data_for_index__(real_idx)
+                    a_dim, audio, label = self.__processed_data_for_index__(real_idx)
+                    arena_dims.append(a_dim)
                     batch.append(audio)
                     labels.append(label)
             
             # Requires individual elements to have shape (seq, ...)
             batch = pad_sequence(batch, batch_first=True)  # Should return tensor of shape (batch, seq, num_channels)
             self.returned_samples += cur_batch_size
-            yield batch, torch.stack(labels)
+            yield torch.stack(arena_dims), batch, torch.stack(labels)
         self.returned_samples = 0
 
     @property
@@ -173,15 +177,15 @@ class VarlenDataset(IterableDataset):
         return scaled_audio, scaled_labels
 
     @staticmethod
-    def unscale_features(labels: np.ndarray, arena_dims: Tuple[int, int]):
-        """ Changes the units of `labels` from arb. scaled unit (in range [0, 1]) to
+    def unscale_features(labels: Union[np.ndarray, torch.Tensor], arena_dims: Union[Tuple[int, int], np.ndarray, torch.Tensor]):
+        """ Changes the units of `labels` from arb. scaled unit (in range [-1, 1]) to
         centimeters.
         """
-        x_scale = arena_dims[0] / 2
-        y_scale = arena_dims[1] / 2
-        scaled_labels = np.empty_like(labels)
-        scaled_labels[..., 0] = labels[..., 0] * x_scale / 10
-        scaled_labels[..., 1] = labels[..., 1] * y_scale / 10
+        if not any([isinstance(arena_dims, torch.Tensor), isinstance(arena_dims, np.ndarray)]):
+            scale = np.array(arena_dims) / 2
+        else:
+            scale = arena_dims / 2
+        scaled_labels = labels * scale
         return scaled_labels
 
     def __processed_data_for_index__(self, idx: int):
@@ -199,7 +203,7 @@ class VarlenDataset(IterableDataset):
         arena_dims = (
             self.dataset["room_dims"][idx][:2] * 1000
             if "room_dims" in self.dataset
-            else self.arena_dims
+            else np.array(self.arena_dims)
         )
         sound, location_map = VarlenDataset.scale_features(
             sound,
@@ -209,9 +213,9 @@ class VarlenDataset(IterableDataset):
         )
 
         if self.inference:
-            return torch.from_numpy(sound.astype("float32"))
+            return torch.from_numpy(arena_dims.astype("float32")), torch.from_numpy(sound.astype("float32"))
 
-        return torch.from_numpy(sound.astype("float32")), torch.from_numpy(location_map.astype("float32"))
+        return torch.from_numpy(arena_dims.astype("float32")), torch.from_numpy(sound.astype("float32")), torch.from_numpy(location_map.astype("float32"))
 
 
 def build_dataloaders(path_to_data, CONFIG):

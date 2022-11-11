@@ -189,9 +189,13 @@ class Trainer:
         # Set the learning rate using cosine annealing.
         self.__progress_log.start_training()
         self.model.train()
-        for sounds, locations in self.__traindata:
+        for dims, sounds, locations in iter(self.__traindata):
+            if dims.dim() > 2:
+                dims = dims.squeeze(0)
             if sounds.dim() == 4:
                 sounds = sounds.squeeze(0)
+            if locations.dim() == 3:
+                locations = locations.squeeze(0)
             # Move data to gpu, if desired.
             if self.__config["DEVICE"] == "GPU":
                 sounds = sounds.cuda()
@@ -203,10 +207,11 @@ class Trainer:
             # Forward pass, including data augmentation.
             # aug_input = self.__augment(sounds, sample_rate=125000) if self.__config['AUGMENT_DATA'] else sounds
             aug_input = sounds
-            outputs = self.model(aug_input)
+            outputs = self.model(aug_input, dims)
+            targets = self.model.targets_for_labels(locations, dims)
 
             # Compute loss.
-            losses = self.__loss_fn(outputs, locations)
+            losses = self.__loss_fn(outputs, targets)
             mean_loss = torch.mean(losses)
 
             # Backwards pass.
@@ -215,6 +220,8 @@ class Trainer:
                 self.model.clip_grads()
             self.__optim.step()
 
+            if np.random.uniform() < 0.05:
+                np.save(path.join(self.__model_dir, 'test.npy'), outputs.detach().cpu().numpy())
             # Count batch as completed.
             self.__progress_log.log_train_batch(mean_loss.item(), np.nan, sounds.shape[-2] * sounds.shape[0])
         self.__scheduler.step()
@@ -225,15 +232,21 @@ class Trainer:
         arena_dims = (self.__config["ARENA_WIDTH"], self.__config["ARENA_LENGTH"])
         if self.__valdata is not None:
             with torch.no_grad():
-                for sounds, locations in self.__valdata:
+                for dims, sounds, locations in iter(self.__valdata):
+                    if dims.dim() > 2:
+                        dims = dims.squeeze(0)
                     if sounds.dim() == 4:
                         sounds = sounds.squeeze(0)
+                    if locations.dim() == 3:
+                        locations = locations.squeeze(0)
                     # Move data to gpu
                     if self.__config["DEVICE"] == "GPU":
                         sounds = sounds.cuda()
 
                     # Forward pass.
-                    outputs = self.model(sounds).cpu()
+                    outputs = self.model(sounds, dims).cpu()
+                    np.save(path.join(self.__model_dir, 'test.npy'), outputs.cpu().numpy())
+                    targets = self.model.targets_for_labels(locations, dims)
 
                     # Convert outputs and labels to centimeters from arb. unit
                     # But only if the outputs are x,y coordinate pairs
@@ -250,7 +263,7 @@ class Trainer:
                             ((label_cm - pred_cm) ** 2).sum(axis=-1)
                         ).mean()
                     else:
-                        losses = self.__loss_fn(outputs, locations)
+                        losses = self.__loss_fn(outputs, targets)
                         mean_loss = torch.mean(losses).item()
 
                     # Log progress
@@ -301,13 +314,12 @@ class Trainer:
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.to(device)
         with torch.no_grad():
-            for batch in dloader:
+            for dims, batch in dloader:
+                if dims.dim() > 2:
+                    dims = dims.squeeze(0)
+
                 data = batch  # (1, channels, seq)
-                output = self.model(data.to(device)).cpu().numpy()
-                if arena_dims is not None:
-                    output = VarlenDataset.unscale_features(
-                        output, arena_dims=arena_dims
-                    )
+                output = self.model(data.to(device), dims.to(device)).cpu().numpy()
                 yield output
 
         if should_close_file:

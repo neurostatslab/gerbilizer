@@ -60,10 +60,22 @@ class LearnedEncoding(nn.Module):
         if transpose:
             enc = enc.T
         self.transpose = transpose
-        nn.init.uniform_(enc, -0.1, 0.1)
+        nn.init.normal_(enc)
         self.encoding = nn.Parameter(enc, requires_grad=True)
 
     def forward(self, x):
         if self.transpose:
             return x + self.encoding[:, : x.shape[-1]].unsqueeze(0)
         return x + self.encoding[: x.shape[1], :].unsqueeze(0)
+
+
+class LearnedImageEncoding(nn.Module):
+    def __init__(self, d_model, max_width, max_height):
+        super().__init__()
+        enc = torch.empty((max_height, max_width, d_model))
+        nn.init.normal_(enc)
+        self.encoding = nn.Parameter(enc, requires_grad=True)
+
+    def forward(self, x):
+        height, width = x.shape[-3], x.shape[-2]
+        return x + self.encoding[:height, :width, :].unsqueeze(0)
