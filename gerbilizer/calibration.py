@@ -204,8 +204,7 @@ class CalibrationAccumulator:
             # of the covariance matrix
             coords = self._make_coord_array()
 
-            mean, cholesky_cov = model_output[0], model_output[1:]
-            cov = cholesky_cov @ cholesky_cov.T
+            mean, cov = model_output[0], model_output[1:]
 
             # evaluate distribution at the gridpoints
             pmf = multivariate_normal(mean=mean, cov=cov).pdf(coords)
@@ -216,8 +215,7 @@ class CalibrationAccumulator:
             # make the mixture density pmf
             coords = self._make_coord_array()
 
-            means, cholesky_covs = model_output[:, 0], model_output[:, 1:]
-            covs = cholesky_covs @ cholesky_covs.swapaxes(-2, -1)
+            means, covs = model_output[:, 0], model_output[:, 1:]
 
             gaussian_pmfs = [
                 multivariate_normal(mean=mean, cov=cov).pdf(coords)
