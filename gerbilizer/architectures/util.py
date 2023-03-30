@@ -6,6 +6,7 @@ an array containing the outputted mean and Cholesky covariance factor.
 import torch
 from torch.nn import functional as F
 
+
 def build_cov_output(raw_output, device):
     """
     Given a batch of length-5 vectors, return a batch of (3, 2) arrays

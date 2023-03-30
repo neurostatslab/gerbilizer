@@ -13,12 +13,10 @@ from gerbilizer.util import assign_to_bin_2d, digitize, make_xy_grids
 
 logger = logging.getLogger(__name__)
 
+
 def min_mass_containing_location(
-    pmf: np.ndarray,
-    location: np.ndarray,
-    xgrid: np.ndarray,
-    ygrid: np.ndarray
-    ):
+    pmf: np.ndarray, location: np.ndarray, xgrid: np.ndarray, ygrid: np.ndarray
+):
     """
     Return the minimum probability mass containing the true location. This
     function is used to calculate the 95% confidence set, as well as calibration
@@ -35,11 +33,11 @@ def min_mass_containing_location(
     expected_grid_shape = (n_y_bins + 1, n_x_bins + 1)
     if xgrid.shape != expected_grid_shape or ygrid.shape != expected_grid_shape:
         raise ValueError(
-            f'Expected `xgrid` and `ygrid` to have shape {expected_grid_shape}, '
-            f'since the pmf has shape {pmf}. '
-            f'Instead, encountered `xgrid` shape {xgrid.shape} and '
-            f'`ygrid` shape {ygrid.shape}'
-            )
+            f"Expected `xgrid` and `ygrid` to have shape {expected_grid_shape}, "
+            f"since the pmf has shape {pmf}. "
+            f"Instead, encountered `xgrid` shape {xgrid.shape} and "
+            f"`ygrid` shape {ygrid.shape}"
+        )
 
     # flatten the pmf
     flattened = pmf.flatten()
@@ -61,10 +59,11 @@ def min_mass_containing_location(
     sorted_maps = flattened[argsorted]
     s = np.where(np.arange(num_bins) > bin_idx, 0, sorted_maps).sum()
     if (s < 0).any():
-        logger.warning(f'negative min masses containing locations found: {s}')
+        logger.warning(f"negative min masses containing locations found: {s}")
     # clip values to remove any floating point errors
     # where the sum is greater than 1
     return s.clip(0, 1)
+
 
 def calculate_confidence_set(pmf: np.ndarray, threshold: float):
     """
@@ -94,44 +93,35 @@ def confidence_set_stats(
     pmf: np.ndarray,
     threshhold: float,
     arena_dims: Union[Tuple[float, float], np.ndarray],
-    true_location: np.ndarray
-    ) -> tuple[np.ndarray, float, bool, float]:
+    true_location: np.ndarray,
+) -> tuple[np.ndarray, float, bool, float]:
     """
     Given a pmf, compute and return the `threshhold` confidence set, along with
     relevant info like its area, whether the true location is in the set, etc.
     """
     # find the mean of each pmf
     center_xgrid, center_ygrid = make_xy_grids(
-        arena_dims,
-        shape=pmf.shape,
-        return_center_pts=True
-        )
+        arena_dims, shape=pmf.shape, return_center_pts=True
+    )
 
     # pmf shape: (n_y_pts, n_x_pts)
-    # marginal distributions over x: pmf.sum(axis=0) 
+    # marginal distributions over x: pmf.sum(axis=0)
     p_X = pmf.sum(axis=0)
     x_coords = (p_X * center_xgrid[0]).sum()
     # marginal distribution over y: pmf.sum(axis=1)
     p_Y = pmf.sum(axis=1)
     y_coords = (p_Y * center_ygrid[:, 0]).sum()
     means = np.column_stack((x_coords, y_coords))
-    
+
     # get the confidence sets
     confidence_set = calculate_confidence_set(pmf, threshhold)
 
     # was the true location in the confidence sets?
-    edge_xgrid, edge_ygrid = make_xy_grids(
-        arena_dims,
-        shape=np.array(pmf.shape) + 1
-    )
-    loc_bin = assign_to_bin_2d(
-        true_location.reshape(1, 2),
-        edge_xgrid,
-        edge_ygrid
-        )
+    edge_xgrid, edge_ygrid = make_xy_grids(arena_dims, shape=np.array(pmf.shape) + 1)
+    loc_bin = assign_to_bin_2d(true_location.reshape(1, 2), edge_xgrid, edge_ygrid)
     (y_idx, x_idx) = np.unravel_index(loc_bin, shape=pmf.shape)
     loc_in_confidence_set = bool(confidence_set[y_idx, x_idx])
-    
+
     # find the area of each set
     arena_area = arena_dims[0] * arena_dims[1]
     num_bins_per_set = confidence_set.sum()
@@ -182,7 +172,6 @@ class CalibrationAccumulator:
         self.location_in_confidence_set = []
         self.distances_to_furthest_point = []
 
-
     def calculate_step(self, model_output: np.ndarray, true_location: np.ndarray):
         """
         Perform one step of the calibration process on `model_output`.
@@ -194,10 +183,10 @@ class CalibrationAccumulator:
         """
         if model_output.shape == (2,):
             raise ValueError(
-                f'Encountered output with shape {model_output.shape}. '
-                'Calibration only supported for models that output a mean and covariance '
-                'or a probability mass function.'
-                )
+                f"Encountered output with shape {model_output.shape}. "
+                "Calibration only supported for models that output a mean and covariance "
+                "or a probability mass function."
+            )
         elif model_output.shape == (3, 2):
             # assume model_output[0] is the mean
             # and model_output[1:] is the Cholesky factor
@@ -229,15 +218,17 @@ class CalibrationAccumulator:
             pmf = model_output
             pmf /= pmf.sum()
         else:
-            raise ValueError(f'Model output shape {model_output.shape} not understood!')
+            raise ValueError(f"Model output shape {model_output.shape} not understood!")
 
         # calculate the confidence set for this prediction
         # and store useful stats about it
-        (confidence_set, area, loc_in_confidence_set, dist_to_furthest_point) = confidence_set_stats(
-            pmf,
-            self.confidence_set_threshold,
-            self.arena_dims,
-            true_location
+        (
+            confidence_set,
+            area,
+            loc_in_confidence_set,
+            dist_to_furthest_point,
+        ) = confidence_set_stats(
+            pmf, self.confidence_set_threshold, self.arena_dims, true_location
         )
 
         self.confidence_sets.append(confidence_set)
@@ -257,12 +248,7 @@ class CalibrationAccumulator:
             true_location = true_location.reshape((1, 2))
 
         # perform the calibration calculation step
-        mass = min_mass_containing_location(
-            pmf,
-            true_location,
-            xgrid,
-            ygrid
-        )
+        mass = min_mass_containing_location(pmf, true_location, xgrid, ygrid)
 
         # transform to the bin in [0, 1] to which each value corresponds,
         # essentially iteratively building a histogram with each step
@@ -280,15 +266,15 @@ class CalibrationAccumulator:
         calibration_curve = self.mass_counts.cumsum() / self.mass_counts.sum()
         # prepend a zero to the calibration curve so each value represents
         # the proportion of values whose min_mass is less than the bin
-        calibration_curve = np.pad(calibration_curve, (1, 0), 'constant')
+        calibration_curve = np.pad(calibration_curve, (1, 0), "constant")
 
         results = {}
-        results['calibration_curve'] = calibration_curve
+        results["calibration_curve"] = calibration_curve
 
-        results['confidence_sets'] = self.confidence_sets
-        results['confidence_set_areas'] = self.confidence_set_areas
-        results['location_in_confidence_set'] = self.location_in_confidence_set
-        results['distances_to_furthest_point'] = self.distances_to_furthest_point
+        results["confidence_sets"] = self.confidence_sets
+        results["confidence_set_areas"] = self.confidence_set_areas
+        results["location_in_confidence_set"] = self.location_in_confidence_set
+        results["distances_to_furthest_point"] = self.distances_to_furthest_point
 
         return results
 
@@ -302,6 +288,8 @@ class CalibrationAccumulator:
         # change xgrid / ygrid size to preserve aspect ratio
         ratio = ydim / xdim
         desired_shape = (int(ratio * 100), 100)
-        xgrid, ygrid = make_xy_grids((xdim, ydim), shape=desired_shape, return_center_pts=True)
+        xgrid, ygrid = make_xy_grids(
+            (xdim, ydim), shape=desired_shape, return_center_pts=True
+        )
         coords = np.dstack((xgrid, ygrid))
         return coords

@@ -22,8 +22,9 @@ class PerceiverLayer(nn.Module):
         in_channels: int,
         out_channels: int,
         dilation: int = 1,
-        positional_encoding: Optional[nn.Module] = None, *,
-        attn_steps_per_conv: int=1,
+        positional_encoding: Optional[nn.Module] = None,
+        *,
+        attn_steps_per_conv: int = 1,
         feedforward_dim: int = 1024,
         dtype: torch.dtype = None,
         device: torch.device = None,
@@ -65,7 +66,7 @@ class PerceiverLayer(nn.Module):
         )
 
         self.init_weights()
-    
+
     def init_weights(self):
         torch.nn.init.xavier_normal_(self.q_proj_weight)
         torch.nn.init.xavier_normal_(self.k_proj_weight_T)
@@ -111,12 +112,12 @@ class PerceiverLayer(nn.Module):
         return self.out_proj(attn_output)  # Should be (batch, mem_size, d_model)
 
     def attn_step(self, memory, sequence):
-        memory = self.norm1(memory + self.sattn(memory, memory, memory, need_weights=False)[0])
-        memory = self.norm2(
-            memory + self.xattn(memory, sequence, sequence)
+        memory = self.norm1(
+            memory + self.sattn(memory, memory, memory, need_weights=False)[0]
         )
+        memory = self.norm2(memory + self.xattn(memory, sequence, sequence))
         memory = self.norm3(memory + self.ff(memory))
-        
+
         return memory
 
     def forward(self, memory, sequence):
@@ -174,20 +175,26 @@ class GerbilizerPerceiver(nn.Module):
                 d_model,
                 dilation,
                 self.pos_encoding,
-                attn_steps_per_conv=attn_steps
+                attn_steps_per_conv=attn_steps,
             )
         ]
         layers.extend(
             [
                 PerceiverLayer(
-                    d_model, n_attn_heads, kernel_size, d_model, d_model, dilation, attn_steps_per_conv=attn_steps
+                    d_model,
+                    n_attn_heads,
+                    kernel_size,
+                    d_model,
+                    d_model,
+                    dilation,
+                    attn_steps_per_conv=attn_steps,
                 )
                 for _ in range(n_transformer_layers - 1)
             ]
         )
         self.layers = nn.ModuleList(layers)
 
-        self.output_cov = bool(config.get('OUTPUT_COV'))
+        self.output_cov = bool(config.get("OUTPUT_COV"))
         N_OUTPUTS = 5 if self.output_cov else 2
 
         self.linear = nn.Sequential(
@@ -201,7 +208,9 @@ class GerbilizerPerceiver(nn.Module):
         return self.parameters()
 
     def forward(self, x):
-        x = x.transpose(-1, -2)  # (batch, seq_len, channels) -> (batch, channels, seq len) needed by conv1d
+        x = x.transpose(
+            -1, -2
+        )  # (batch, seq_len, channels) -> (batch, channels, seq len) needed by conv1d
         memory = torch.randn(
             (x.shape[0], self.memory_size, self.d_model), dtype=x.dtype, device=x.device
         )
@@ -212,4 +221,3 @@ class GerbilizerPerceiver(nn.Module):
         output = self.linear(memory[:, 0])
 
         return build_cov_output(output, x.device) if self.output_cov else output
-

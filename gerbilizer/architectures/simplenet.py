@@ -27,7 +27,7 @@ class GerbilizerSimpleLayer(torch.nn.Module):
             channels_in,
             channels_out,
             filter_size,
-            #padding=(filter_size * dilation - 1) // 2,
+            # padding=(filter_size * dilation - 1) // 2,
             padding=0,
             stride=(2 if downsample else 1),
             dilation=dilation,
@@ -107,13 +107,15 @@ class GerbilizerSimpleNetwork(torch.nn.Module):
 
         # Final linear layer to reduce the number of channels.
         # self.coord_readout = torch.nn.Linear(self.n_channels[-1], 2)
-        self.output_cov = bool(CONFIG.get('OUTPUT_COV'))
+        self.output_cov = bool(CONFIG.get("OUTPUT_COV"))
         N_OUTPUTS = 5 if self.output_cov else 2
 
         self.coord_readout = torch.nn.Linear(self.n_channels[-1], N_OUTPUTS)
 
     def forward(self, x):
-        x = x.transpose(-1, -2)  # (batch, seq_len, channels) -> (batch, channels, seq_len) needed by conv1d
+        x = x.transpose(
+            -1, -2
+        )  # (batch, seq_len, channels) -> (batch, channels, seq_len) needed by conv1d
         h1 = self.conv_layers(x)
         h2 = torch.squeeze(self.final_pooling(h1), dim=-1)
         coords = self.coord_readout(h2)
@@ -121,4 +123,3 @@ class GerbilizerSimpleNetwork(torch.nn.Module):
 
     def clip_grads(self):
         nn.utils.clip_grad_norm_(self.parameters(), 1.0, error_if_nonfinite=True)
-

@@ -41,6 +41,7 @@ def wass_loss_fn(pred: torch.Tensor, target: torch.Tensor):
     error_map = F.log_softmax(flat_pred, dim=1) + torch.log(flat_target + 1)
     return torch.logsumexp(error_map, dim=1)
 
+
 def gaussian_NLL(pred: torch.Tensor, target: torch.Tensor):
     """
     Negative log likelihood of the Gaussian parameterized by the model prediction.
@@ -52,7 +53,7 @@ def gaussian_NLL(pred: torch.Tensor, target: torch.Tensor):
 
     where mu(x) and Sigma(x) are models of the mean and covariance as a
     function of the audio.
-    
+
     Expects pred to be a tensor of shape (B, 3, 2), where pred[i][0]
     represents the predicted mean for example i and the entries pred[i][1:]
     and the remaining entries represent a lower triangular matrix L such that
@@ -61,29 +62,25 @@ def gaussian_NLL(pred: torch.Tensor, target: torch.Tensor):
     # make sure that preds has shape: (B, 3, 2) where B is the batch size
     if pred.ndim != 3:
         raise ValueError(
-            'Expected `pred` to have shape (B, 3, 2) where B is the batch size, '
-            f'but encountered shape: {pred.shape}'
-            )
+            "Expected `pred` to have shape (B, 3, 2) where B is the batch size, "
+            f"but encountered shape: {pred.shape}"
+        )
 
     y_hat = pred[:, 0]  # output, shape: (B, 2)
     L = pred[:, 1:]  # cholesky factor of covariance, shape: (B, 2, 2)
 
     # create the distribution corresponding to the outputted predictive
     # density
-    multivariate_normal = MultivariateNormal(
-        loc=y_hat,
-        scale_tril=L
-    )
+    multivariate_normal = MultivariateNormal(loc=y_hat, scale_tril=L)
 
     loss = -multivariate_normal.log_prob(target)
 
     return loss
 
+
 def gaussian_NLL_half_normal_variances(
-    pred: torch.Tensor,
-    target: torch.Tensor,
-    arena_dims: tuple[float, float]
-    ):
+    pred: torch.Tensor, target: torch.Tensor, arena_dims: tuple[float, float]
+):
     """
     Regularized version of the gaussian_NLL loss function. Specifically, this
     is the negative log posterior p(mu, Sigma | x) where we place half-Normal
@@ -116,38 +113,38 @@ def gaussian_NLL_half_normal_variances(
 
     x_dim, y_dim = arena_dims
 
-    get_lambda = lambda dimension: 1 / 2 * (dimension ** 2)
+    get_lambda = lambda dimension: 1 / 2 * (dimension**2)
 
     lambda_x = get_lambda(x_dim)
     lambda_y = get_lambda(y_dim)
 
     return NLL_term + (lambda_x * variance_x) + (lambda_y * variance_y)
 
+
 def gaussian_NLL_entropy_penalty(
     pred: torch.Tensor,
     target: torch.Tensor,
     penalty: float = 1.0,
-    ):
+):
     """
     Regularized version of gaussian_NLL, with an entropy penalty.
     """
     # make sure that preds has shape: (B, 3, 2) where B is the batch size
     if pred.ndim != 3:
         raise ValueError(
-            'Expected `pred` to have shape (B, 3, 2) where B is the batch size, '
-            f'but encountered shape: {pred.shape}'
-            )
+            "Expected `pred` to have shape (B, 3, 2) where B is the batch size, "
+            f"but encountered shape: {pred.shape}"
+        )
 
     y_hat = pred[:, 0]  # output, shape: (B, 2)
     L = pred[:, 1:]  # cholesky factor of covariance, shape: (B, 2, 2)
 
     # create the distribution corresponding to the outputted predictive
     # density
-    multivariate_normal = MultivariateNormal(
-        loc=y_hat,
-        scale_tril=L
-    )
+    multivariate_normal = MultivariateNormal(loc=y_hat, scale_tril=L)
 
-    loss = -multivariate_normal.log_prob(target) + (penalty * multivariate_normal.entropy())
+    loss = -multivariate_normal.log_prob(target) + (
+        penalty * multivariate_normal.entropy()
+    )
 
     return loss

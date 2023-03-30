@@ -10,51 +10,17 @@ SIMPLENET_BASE = {
     "MIN_LEARNING_RATE": 1e-05,
     "SAMPLE_LEN": 8192,
     "SHOULD_DOWNSAMPLE": [False, True, True, True, True, True, False],
-    "CONV_FILTER_SIZES": [
-        19,
-        7,
-        39,
-        41,
-        23,
-        29,
-        33
-    ],
-
+    "CONV_FILTER_SIZES": [19, 7, 39, 41, 23, 29, 33],
     "NUM_MICROPHONES": 4,
     "NUM_EPOCHS": 20,
     "ARCHITECTURE": "GerbilizerSimpleNetwork",
     "COMPUTE_XCORRS": True,
     "AUGMENT_DATA": False,
     "CLIP_GRADIENTS": True,
-    "CONV_NUM_CHANNELS": [
-        16,
-        16,
-        16,
-        32,
-        32,
-        32,
-        64,
-        64,
-        64
-    ],
-    "CONV_DILATIONS": [
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1
-    ],
-
+    "CONV_NUM_CHANNELS": [16, 16, 16, 32, 32, 32, 64, 64, 64],
+    "CONV_DILATIONS": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     "ARENA_WIDTH": 600,
     "ARENA_LENGTH": 400,
-
     "CONFIG_NAME": "simplenet_no_cov",
     "DEVICE": "CPU",
     "TORCH_SEED": 888,
@@ -85,17 +51,15 @@ SIMPLENET_BASE = {
 }
 
 SIMPLENET_COV = copy.deepcopy(SIMPLENET_BASE)
-SIMPLENET_COV['OUTPUT_COV'] = True
+SIMPLENET_COV["OUTPUT_COV"] = True
 
-ENSEMBLE = {
-    'MODELS': [SIMPLENET_COV, SIMPLENET_COV, SIMPLENET_COV]
-}
+ENSEMBLE = {"MODELS": [SIMPLENET_COV, SIMPLENET_COV, SIMPLENET_COV]}
 
 ENSEMBLE_AVG = {
-    'MODELS': [SIMPLENET_COV, SIMPLENET_COV, SIMPLENET_COV],
-    'AVERAGE_OUTPUTS': True
+    "MODELS": [SIMPLENET_COV, SIMPLENET_COV, SIMPLENET_COV],
+    "AVERAGE_OUTPUTS": True,
 }
 
 ENSEMBLE_MISSING_COV = {
-    'MODELS': [SIMPLENET_COV, SIMPLENET_BASE, SIMPLENET_COV],
+    "MODELS": [SIMPLENET_COV, SIMPLENET_BASE, SIMPLENET_COV],
 }

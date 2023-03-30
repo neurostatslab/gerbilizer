@@ -14,17 +14,18 @@ from constants import (
     SIMPLENET_COV,
     ENSEMBLE,
     ENSEMBLE_AVG,
-    ENSEMBLE_MISSING_COV
+    ENSEMBLE_MISSING_COV,
 )
 
+
 class TestOuptutShapes(unittest.TestCase):
-
-
     @classmethod
     def setUpClass(cls):
         # number of channels of input with four mics and passed-in cross correlations
         NUM_CHANNELS_MICS_AND_XCORR = 10
-        cls.fake_input = torch.zeros(1, NUM_CHANNELS_MICS_AND_XCORR, SIMPLENET_BASE['SAMPLE_LEN'])
+        cls.fake_input = torch.zeros(
+            1, NUM_CHANNELS_MICS_AND_XCORR, SIMPLENET_BASE["SAMPLE_LEN"]
+        )
 
     def test_simplenet(self):
         # test loading the models
@@ -39,7 +40,7 @@ class TestOuptutShapes(unittest.TestCase):
 
     def test_ensemble(self):
         ensemble = GerbilizerEnsemble(ENSEMBLE)
-        expected_shape = (1, len(ENSEMBLE['MODELS']), 3, 2)
+        expected_shape = (1, len(ENSEMBLE["MODELS"]), 3, 2)
         self.assertEqual(ensemble(self.fake_input).shape, expected_shape)
 
         avgd_expected_shape = (1, 3, 2)
@@ -50,4 +51,3 @@ class TestOuptutShapes(unittest.TestCase):
         # doesn't have the 'OUTPUT_COV' flag
         with self.assertRaises(ValueError):
             GerbilizerEnsemble(ENSEMBLE_MISSING_COV)
-

@@ -25,14 +25,16 @@ def make_logger(filepath: str) -> logging.Logger:
     logger.addHandler(logging.FileHandler(filepath))
     return logger
 
+
 def l2_distance(preds: np.ndarray, labels: np.ndarray, arena_dims) -> np.ndarray:
     """
-    Unscale predictions and locations, then return the l2 distances 
+    Unscale predictions and locations, then return the l2 distances
     across the batch in centimeters.
     """
     pred_cm = GerbilVocalizationDataset.unscale_features(preds, arena_dims)
     label_cm = GerbilVocalizationDataset.unscale_features(labels, arena_dims)
     return np.linalg.norm(pred_cm - label_cm, axis=-1)
+
 
 class Trainer:
     """A helper class for training and performing inference with Gerbilizer models"""
@@ -222,7 +224,9 @@ class Trainer:
             self.__optim.step()
 
             # Count batch as completed.
-            self.__progress_log.log_train_batch(mean_loss.item(), np.nan, sounds.shape[0] * sounds.shape[1])
+            self.__progress_log.log_train_batch(
+                mean_loss.item(), np.nan, sounds.shape[0] * sounds.shape[1]
+            )
         self.__scheduler.step()
 
     def eval_validation(self):
@@ -234,8 +238,8 @@ class Trainer:
                 for sounds, locations in self.__valdata:
                     # Move data to gpu
                     if self.__config["DEVICE"] == "GPU":
-                        sounds = sounds.unsqueeze(0).cuda()
-                    locations = locations.unsqueeze(0).numpy()
+                        sounds = sounds.cuda()
+                    locations = locations.numpy()
 
                     # Forward pass.
                     outputs = self.model(sounds).cpu().numpy()
@@ -246,13 +250,17 @@ class Trainer:
                         mean_loss = l2_distance(outputs, locations, arena_dims).mean()
                     elif outputs.ndim == 3 and outputs.shape[1:] == (3, 2):
                         predicted_locations = outputs[:, 0]
-                        mean_loss = l2_distance(predicted_locations, locations, arena_dims).mean()
+                        mean_loss = l2_distance(
+                            predicted_locations, locations, arena_dims
+                        ).mean()
                     else:
                         losses = self.__loss_fn(outputs, locations)
                         mean_loss = torch.mean(losses).item()
 
                     # Log progress
-                    self.__progress_log.log_val_batch(mean_loss / 10.0, np.nan, sounds.shape[0] * sounds.shape[1])
+                    self.__progress_log.log_val_batch(
+                        mean_loss / 10.0, np.nan, sounds.shape[0] * sounds.shape[1]
+                    )
 
             # Done with epoch.
             val_loss = self.__progress_log.finish_epoch()
@@ -290,6 +298,7 @@ class Trainer:
             datapath=dataset,
             make_xcorrs=self.__config["COMPUTE_XCORRS"],
             arena_dims=arena_dims,
+            crop_length=self.__config.get("CROP_LENGTH", None),
             inference=True,
         )
 

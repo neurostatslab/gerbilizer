@@ -51,13 +51,13 @@ def get_args():
 
     parser.add_argument(
         "--bare",
-        action='store_true',
+        action="store_true",
         required=False,
         help=(
             "By default, this script creates a nested directory structure in "
             "which to store model output. This flag overrides this behavior, placing "
             "output like saved weights directly in the directory provided."
-            )
+        ),
     )
 
     args = parser.parse_args()
@@ -115,6 +115,7 @@ def validate_args(args):
             f"{args.job_id:0>5d}",
         )
 
+
 def run_eval(args: argparse.Namespace, trainer: Trainer):
     # expects args.data to point toward a file rather than a directory
     # In this case, all three h5py.File objects held by the Trainer are None
@@ -148,9 +149,7 @@ def run_eval(args: argparse.Namespace, trainer: Trainer):
 
         start_time = time.time()
         for n, result in enumerate(
-            trainer.eval_on_dataset(
-                data_path, arena_dims=arena_dims
-            )
+            trainer.eval_on_dataset(data_path, arena_dims=arena_dims)
         ):
             preds[n] = result.squeeze()
             if (n + 1) % 100 == 0:

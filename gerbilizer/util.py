@@ -14,13 +14,10 @@ from matplotlib.figure import FigureBase
 
 logger = logging.getLogger(__name__)
 
+
 def subplots(
-    n_plots,
-    scale_factor=4,
-    sharex=True,
-    sharey=True,
-    **kwargs
-    ) -> tuple[FigureBase, list[Axes]]:
+    n_plots, scale_factor=4, sharex=True, sharey=True, **kwargs
+) -> tuple[FigureBase, list[Axes]]:
     """
     Create nicely sized and laid-out subplots for a desired number of plots.
     """
@@ -33,10 +30,8 @@ def subplots(
     # cosmetic scale factor to make larger plot
     figsize = (n_cols * scale_factor, n_rows * scale_factor)
     fig, axs = plt.subplots(
-        n_rows, n_cols, figsize=figsize,
-        sharex=sharex, sharey=sharey,
-        **kwargs
-        )
+        n_rows, n_cols, figsize=figsize, sharex=sharex, sharey=sharey, **kwargs
+    )
     flattened_axes = []
     for ax_row in axs:
         if isinstance(ax_row, np.ndarray):
@@ -44,6 +39,7 @@ def subplots(
         else:
             flattened_axes.append(ax_row)
     return fig, flattened_axes
+
 
 def digitize(locations, bin_edges) -> np.ndarray:
     """
@@ -54,7 +50,7 @@ def digitize(locations, bin_edges) -> np.ndarray:
     # check that the bins are in increasing order
     diffs = np.diff(bin_edges)
     if (diffs <= 0).any():
-        raise ValueError('Expected array `bins` to be in increasing order.')
+        raise ValueError("Expected array `bins` to be in increasing order.")
     # get max distance between bins
     max_dx = diffs.max()
     # define a new bin array where the highest bin
@@ -75,14 +71,12 @@ def digitize(locations, bin_edges) -> np.ndarray:
     if (bin_idxs == len(edges_to_use)).any():
         positions = bin_idxs == len(edges_to_use)
         values = locations[positions]
-        err_display = [
-            f'idx: {p} | value: {v}' for (p, v) in zip(positions, values)
-            ]
+        err_display = [f"idx: {p} | value: {v}" for (p, v) in zip(positions, values)]
         raise ValueError(
-            f'Encountered value far greater than the largest bin edge! '
-            f'Largest bin edge: {bin_edges[-1]}; Invalid values and their '
-            f'positions: {err_display}'
-            )
+            f"Encountered value far greater than the largest bin edge! "
+            f"Largest bin edge: {bin_edges[-1]}; Invalid values and their "
+            f"positions: {err_display}"
+        )
     # if not, say that the values were sufficiently close to the bin edges
     # and clip them to match the number of bins
     num_bins = len(bin_edges) - 1
@@ -118,7 +112,6 @@ def assign_to_bin_2d(locations, xgrid, ygrid):
     # (n_x_bins * j) + i
     n_x_bins = len(x_bin_edges) - 1
     return (n_x_bins * y_idxs) + x_idxs
-
 
 
 def make_xy_grids(
@@ -165,7 +158,7 @@ def make_xy_grids(
 
     """
     if resolution is None and shape is None:
-        raise ValueError('One of `resolution`, `shape` is required!')
+        raise ValueError("One of `resolution`, `shape` is required!")
 
     if not resolution:
         # np.meshgrid returns a shape of (n_y_pts, n_x_pts)
@@ -201,4 +194,3 @@ def make_xy_grids(
     xgrid, ygrid = np.meshgrid(xs, ys)
 
     return (xgrid, ygrid)
-

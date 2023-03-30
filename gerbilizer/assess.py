@@ -22,16 +22,17 @@ from gerbilizer.training.configs import build_config
 from gerbilizer.util import make_xy_grids, subplots
 from gerbilizer.training.models import build_model, unscale_output
 
-logging.getLogger('matplotlib').setLevel(logging.WARNING)
+logging.getLogger("matplotlib").setLevel(logging.WARNING)
 
 FIRST_N_VOX_TO_PLOT = 16
+
 
 def plot_results(f: h5py.File):
     """
     Create and save plots of calibration curve, error distributions, etc.
     """
-    output = f['scaled_output'][:]
-    means = np.zeros((f['scaled_output'][:].shape[0], 2))
+    output = f["scaled_output"][:]
+    means = np.zeros((f["scaled_output"][:].shape[0], 2))
     # output is a mean and a cov
     if output[0].shape == (3, 2):
         means = output[:, 0]
@@ -43,39 +44,38 @@ def plot_results(f: h5py.File):
         means = output
     else:
         logging.warn(
-            'Automatically plotting results not supported for models that output a pmf! Skipping...'
-            )
+            "Automatically plotting results not supported for models that output a pmf! Skipping..."
+        )
         return
 
-    errs = np.linalg.norm(means - f['scaled_locations'][:], axis=-1)
+    errs = np.linalg.norm(means - f["scaled_locations"][:], axis=-1)
     fig, axs = subplots(5, sharex=False, sharey=False)
     (err_ax, calib_ax, cset_area_ax, cset_radius_ax, dist_ax) = axs
 
     err_ax.hist(errs)
-    err_ax.set_xlabel('errors (mm)')
-    err_ax.set_ylabel('counts')
-    err_ax.set_title('error distribution')
+    err_ax.set_xlabel("errors (mm)")
+    err_ax.set_ylabel("counts")
+    err_ax.set_title("error distribution")
 
-    calib_ax.plot(np.linspace(0, 1, 11), f.attrs['calibration_curve'][:], 'bo')
-    calib_ax.set_xlabel('probability assigned to region')
-    calib_ax.set_ylabel('proportion of locations in the region')
-    calib_ax.set_title('calibration curve')
+    calib_ax.plot(np.linspace(0, 1, 11), f.attrs["calibration_curve"][:], "bo")
+    calib_ax.set_xlabel("probability assigned to region")
+    calib_ax.set_ylabel("proportion of locations in the region")
+    calib_ax.set_title("calibration curve")
 
-    cset_area_ax.hist(f['confidence_set_areas'][:])
-    cset_area_ax.set_xlabel('confidence set area (mm^2)')
-    cset_area_ax.set_ylabel('counts')
-    cset_area_ax.set_title('confidence set area distribution')
+    cset_area_ax.hist(f["confidence_set_areas"][:])
+    cset_area_ax.set_xlabel("confidence set area (mm^2)")
+    cset_area_ax.set_ylabel("counts")
+    cset_area_ax.set_title("confidence set area distribution")
 
-    cset_radius_ax.plot(np.sqrt(f['confidence_set_areas'][:]), errs, 'bo')
-    cset_radius_ax.set_xlabel('square root confidence set area (mm)')
-    cset_radius_ax.set_ylabel('error (mm)')
-    cset_radius_ax.set_title('sqrt confidence set area vs error')
+    cset_radius_ax.plot(np.sqrt(f["confidence_set_areas"][:]), errs, "bo")
+    cset_radius_ax.set_xlabel("square root confidence set area (mm)")
+    cset_radius_ax.set_ylabel("error (mm)")
+    cset_radius_ax.set_title("sqrt confidence set area vs error")
 
-    dist_ax.plot(f['distances_to_furthest_point'][:], errs, 'bo')
-    dist_ax.set_xlabel('distance to furthest point in confidence set (mm)')
-    dist_ax.set_ylabel('error (mm)')
-    dist_ax.set_title('distance to furthest point vs error')
-
+    dist_ax.plot(f["distances_to_furthest_point"][:], errs, "bo")
+    dist_ax.set_xlabel("distance to furthest point in confidence set (mm)")
+    dist_ax.set_ylabel("error (mm)")
+    dist_ax.set_title("distance to furthest point vs error")
 
     return fig, axs
 
@@ -85,9 +85,9 @@ def assess_model(
     dataloader: DataLoader,
     outfile: Union[Path, str],
     arena_dims: tuple,
-    device='cuda:0',
-    visualize=False
-    ):
+    device="cuda:0",
+    visualize=False,
+):
     """
     Assess the provided model with uncertainty, storing model output as well as
     info like error, confidence sets, and a calibration curve in the h5 format
@@ -100,11 +100,13 @@ def assess_model(
     N = dataloader.dataset.n_vocalizations
     LOC_SHAPE = (N, 2)
 
-    with h5py.File(outfile, 'w') as f:
-        raw_locations = f.create_dataset('raw_locations', shape=LOC_SHAPE)
-        scaled_locations = f.create_dataset('scaled_locations', shape=LOC_SHAPE)
+    with h5py.File(outfile, "w") as f:
+        raw_locations = f.create_dataset("raw_locations", shape=LOC_SHAPE)
+        scaled_locations = f.create_dataset("scaled_locations", shape=LOC_SHAPE)
 
-        raw_output = []  # don't initialize a dataset bc we don't know model output shape
+        raw_output = (
+            []
+        )  # don't initialize a dataset bc we don't know model output shape
         scaled_output = []
 
         ca = CalibrationAccumulator(arena_dims)
@@ -133,50 +135,58 @@ def assess_model(
                 # arena size from [-1, 1] square
                 unscaled_output = unscale_output(np_output, arena_dims).squeeze()
                 scaled_output.append(unscaled_output)
-                
+
                 # other useful info
                 ca.calculate_step(unscaled_output, scaled_location)
 
                 if visualize and idx == FIRST_N_VOX_TO_PLOT:
                     # plot the densities
-                    visualize_dir = outfile.parent / 'pmfs_visualized'
+                    visualize_dir = outfile.parent / "pmfs_visualized"
                     visualize_dir.mkdir(exist_ok=True, parents=True)
-                    visualize_outfile = visualize_dir / f'{outfile.stem}_visualized.png'
+                    visualize_outfile = visualize_dir / f"{outfile.stem}_visualized.png"
 
                     sets_to_plot = ca.confidence_sets[:idx]
                     associated_locations = scaled_locations[:idx]
 
                     _, axs = subplots(len(sets_to_plot))
 
-                    xgrid, ygrid = make_xy_grids(arena_dims, shape=sets_to_plot[0].shape, return_center_pts=True)
+                    xgrid, ygrid = make_xy_grids(
+                        arena_dims, shape=sets_to_plot[0].shape, return_center_pts=True
+                    )
                     for i, ax in enumerate(axs):
-                        ax.set_title(f'vocalization {i}')
+                        ax.set_title(f"vocalization {i}")
                         ax.contourf(xgrid, ygrid, sets_to_plot[i])
                         # add a red dot indicating the true location
-                        ax.plot(*associated_locations[i], 'ro')
-                        ax.set_aspect('equal', 'box')
+                        ax.plot(*associated_locations[i], "ro")
+                        ax.set_aspect("equal", "box")
 
                     plt.savefig(visualize_outfile)
-                    print(f'Model output visualized at file {visualize_outfile}')
+                    print(f"Model output visualized at file {visualize_outfile}")
 
         results = ca.results()
-        f.attrs['calibration_curve'] = results['calibration_curve']
+        f.attrs["calibration_curve"] = results["calibration_curve"]
 
-        f.create_dataset('raw_output', data=np.array(raw_output))
-        f.create_dataset('scaled_output', data=np.array(scaled_output))
+        f.create_dataset("raw_output", data=np.array(raw_output))
+        f.create_dataset("scaled_output", data=np.array(scaled_output))
 
         # array-like quantities outputted by the calibration accumulator
-        OUTPUTS = ('confidence_sets', 'confidence_set_areas', 'location_in_confidence_set', 'distances_to_furthest_point')
+        OUTPUTS = (
+            "confidence_sets",
+            "confidence_set_areas",
+            "location_in_confidence_set",
+            "distances_to_furthest_point",
+        )
         for output_name in OUTPUTS:
             f.create_dataset(output_name, data=results[output_name])
 
         _, axs = plot_results(f)
         plt.tight_layout()
-        plt.savefig(Path(outfile).parent / f'{Path(outfile).stem}_results.png')
+        plt.savefig(Path(outfile).parent / f"{Path(outfile).stem}_results.png")
 
-    print(f'Model output saved to {outfile}')
+    print(f"Model output saved to {outfile}")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--config",
@@ -202,8 +212,8 @@ if __name__ == '__main__':
 
     parser.add_argument(
         "--visualize",
-        action='store_true',
-        help="Include flag to plot confidence sets occasionally during assessment."
+        action="store_true",
+        help="Include flag to plot confidence sets occasionally during assessment.",
     )
 
     args = parser.parse_args()
@@ -216,14 +226,14 @@ if __name__ == '__main__':
     config_data = build_config(args.config)
 
     # load the model
-    weights_path = config_data.get('WEIGHTS_PATH')
+    weights_path = config_data.get("WEIGHTS_PATH")
     if not weights_path:
         raise ValueError(
             f"Cannot evaluate model as the config stored at {args.config} doesn't include path to weights."
         )
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     if device == "cpu":
-        config_data['DEVICE'] = 'cpu'
+        config_data["DEVICE"] = "cpu"
     model, _ = build_model(config_data)
     weights = torch.load(weights_path, map_location=device)
     model.load_state_dict(weights, strict=False)
@@ -233,12 +243,11 @@ if __name__ == '__main__':
         str(args.data),
         arena_dims=arena_dims,
         make_xcorrs=config_data["COMPUTE_XCORRS"],
+        crop_length=config_data.get("CROP_LENGTH", None),
         sequential=True,
     )
 
-    dataloader = DataLoader(
-        dataset, batch_size=1, shuffle=False
-    )
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
 
     # make the parent directories for the desired outfile if they don't exist
     parent = Path(args.outfile).parent
@@ -251,4 +260,4 @@ if __name__ == '__main__':
         arena_dims,
         device=device,
         visualize=args.visualize,
-        )
+    )

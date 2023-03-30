@@ -84,10 +84,12 @@ class GerbilizerAttentionNet(nn.Module):
 
         self.dense = nn.Sequential(nn.Linear(d_model, self.linear_dim), nn.ReLU())
 
-        self.output_cov = bool(config.get('OUTPUT_COV'))
+        self.output_cov = bool(config.get("OUTPUT_COV"))
         N_OUTPUTS = 5 if self.output_cov else 2
 
-        self.coord_readout = nn.Sequential(nn.Linear(self.linear_dim, N_OUTPUTS), nn.Tanh())
+        self.coord_readout = nn.Sequential(
+            nn.Linear(self.linear_dim, N_OUTPUTS), nn.Tanh()
+        )
 
     def _clip_grads(self):
         nn.utils.clip_grad_norm_(self.parameters(), 1.0)
