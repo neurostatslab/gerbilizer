@@ -52,7 +52,19 @@ def plot_results(f: h5py.File):
     fig, axs = subplots(5, sharex=False, sharey=False)
     (err_ax, calib_ax, cset_area_ax, cset_radius_ax, dist_ax) = axs
 
-    err_ax.hist(errs)
+    if 'muse_pred' in f:
+        _, bins, _ = err_ax.hist(errs, alpha=0.3, label='DNN', color='b')
+        muse_pred = f['muse_pred'][:] * 1000  # convert from m to mm
+        muse_errs = np.linalg.norm(means - muse_pred, axis=-1)
+        err_ax.hist(muse_errs, bins=bins, alpha=0.3, color='m', label='MUSE')  # use the same bins
+        muse_quant = np.quantile(muse_errs, (0.25, 0.50, 0.75))
+        err_ax.axvline(muse_quant[1], color='m', label='Median')
+    else:
+        err_ax.hist(errs, color='b')  # alpha=1
+    err_quant = np.quantile(errs, (0.25, 0.5, 0.75))
+    err_ax.axvline(err_quant[1], color='b', label='Median')
+    
+    err_ax.legend()
     err_ax.set_xlabel("errors (mm)")
     err_ax.set_ylabel("counts")
     err_ax.set_title("error distribution")
@@ -101,6 +113,9 @@ def assess_model(
     LOC_SHAPE = (N, 2)
 
     with h5py.File(outfile, "w") as f:
+        if 'muse_pred' in dataloader.dataset.dataset:
+            src = dataloader.dataset.dataset
+            src.copy(src['muse_pred'], f, 'muse_pred')
         raw_locations = f.create_dataset("raw_locations", shape=LOC_SHAPE)
         scaled_locations = f.create_dataset("scaled_locations", shape=LOC_SHAPE)
 
@@ -240,14 +255,14 @@ if __name__ == "__main__":
 
     arena_dims = (config_data["ARENA_WIDTH"], config_data["ARENA_LENGTH"])
     dataset = GerbilVocalizationDataset(
-        str(args.data),
+        args.data,
         arena_dims=arena_dims,
         make_xcorrs=config_data["COMPUTE_XCORRS"],
         crop_length=config_data.get("CROP_LENGTH", None),
         sequential=True,
     )
 
-    dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
+    dataloader = DataLoader(dataset, shuffle=False, collate_fn=lambda x: x[0])
 
     # make the parent directories for the desired outfile if they don't exist
     parent = Path(args.outfile).parent

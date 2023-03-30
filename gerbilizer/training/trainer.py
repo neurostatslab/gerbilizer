@@ -302,7 +302,7 @@ class Trainer:
             inference=True,
         )
 
-        dloader = DataLoader(dset)
+        dloader = DataLoader(dset, collate_fn=lambda x: x[0])
 
         self.model.eval()
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
