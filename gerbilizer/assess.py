@@ -55,7 +55,7 @@ def plot_results(f: h5py.File):
     if 'muse_pred' in f:
         _, bins, _ = err_ax.hist(errs, alpha=0.3, label='DNN', color='b')
         muse_pred = f['muse_pred'][:] * 1000  # convert from m to mm
-        muse_errs = np.linalg.norm(means - muse_pred, axis=-1)
+        muse_errs = np.linalg.norm(f['scaled_locations'][:] - muse_pred, axis=-1)
         err_ax.hist(muse_errs, bins=bins, alpha=0.3, color='m', label='MUSE')  # use the same bins
         muse_quant = np.quantile(muse_errs, (0.25, 0.50, 0.75))
         err_ax.axvline(muse_quant[1], color='m', label='Median')
