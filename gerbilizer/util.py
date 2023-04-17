@@ -54,13 +54,12 @@ def digitize(locations, bin_edges) -> np.ndarray:
     # get max distance between bins
     max_dx = diffs.max()
     # define a new bin array where the highest bin
-    # is bins[-1] + tol, with our tolerance as
-    # 0.01 * max_dx.
+    # is bins[-1] + tol
     # say values less than this are in the highest bin.
     # this is to catch floating point errors that push values
     # greater than bin_edges[-1], while still
     # letting us catch extreme values that are way too high.
-    tol = 0.01 * max_dx
+    tol = max_dx
     extended_bins = np.append(bin_edges, bin_edges[-1] + tol)
     # digitize locations using these new bins, removing the
     # leftmost bin edge to avoid off-by-one errors.
@@ -71,7 +70,7 @@ def digitize(locations, bin_edges) -> np.ndarray:
     if (bin_idxs == len(edges_to_use)).any():
         positions = bin_idxs == len(edges_to_use)
         values = locations[positions]
-        err_display = [f"idx: {p} | value: {v}" for (p, v) in zip(positions, values)]
+        err_display = [f"idx: {p} | value: {v}" for (p, v) in zip(positions.nonzero(), values)]
         raise ValueError(
             f"Encountered value far greater than the largest bin edge! "
             f"Largest bin edge: {bin_edges[-1]}; Invalid values and their "

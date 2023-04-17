@@ -16,6 +16,7 @@ import torch
 from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
 
+from gerbilizer.architectures.ensemble import GerbilizerEnsemble
 from gerbilizer.calibration import CalibrationAccumulator
 from gerbilizer.training.dataloaders import GerbilVocalizationDataset
 from gerbilizer.training.configs import build_config
@@ -119,9 +120,8 @@ def assess_model(
         raw_locations = f.create_dataset("raw_locations", shape=LOC_SHAPE)
         scaled_locations = f.create_dataset("scaled_locations", shape=LOC_SHAPE)
 
-        raw_output = (
-            []
-        )  # don't initialize a dataset bc we don't know model output shape
+        # don't initialize a dataset bc we don't know model output shape
+        raw_output = []
         scaled_output = []
 
         ca = CalibrationAccumulator(arena_dims)
@@ -242,16 +242,19 @@ if __name__ == "__main__":
 
     # load the model
     weights_path = config_data.get("WEIGHTS_PATH")
-    if not weights_path:
-        raise ValueError(
-            f"Cannot evaluate model as the config stored at {args.config} doesn't include path to weights."
-        )
+
+    # if not weights_path:
+    #     raise ValueError(
+    #         f"Cannot evaluate model as the config stored at {args.config} doesn't include path to weights."
+    #     )
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     if device == "cpu":
         config_data["DEVICE"] = "cpu"
+
     model, _ = build_model(config_data)
-    weights = torch.load(weights_path, map_location=device)
-    model.load_state_dict(weights, strict=False)
+    if weights_path:
+        weights = torch.load(weights_path, map_location=device)
+        model.load_state_dict(weights, strict=False)
 
     arena_dims = (config_data["ARENA_WIDTH"], config_data["ARENA_LENGTH"])
     dataset = GerbilVocalizationDataset(
@@ -262,7 +265,11 @@ if __name__ == "__main__":
         sequential=True,
     )
 
-    dataloader = DataLoader(dataset, shuffle=False, collate_fn=lambda x: x[0])
+    # function that torch dataloader uses to assemble batches.
+    # in our case, applying this is necessary because of the structure of the
+    # dataset class (which was created to accomodate variable length batches, so it's a little wonky)
+    collate_fn = lambda x: x[0]
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=False, collate_fn=collate_fn)
 
     # make the parent directories for the desired outfile if they don't exist
     parent = Path(args.outfile).parent

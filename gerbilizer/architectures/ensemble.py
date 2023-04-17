@@ -6,50 +6,51 @@ from torch import nn
 # from torch.nn import functional as F
 from gerbilizer.training.configs import build_config
 
-from gerbilizer.training.models import build_model
-
 # inference only for now
 class GerbilizerEnsemble(nn.Module):
     # config should just tell us model architectures
-    def __init__(self, config):
+    def __init__(self, config, built_models):
+        """
+        Inputs the loaded config dictionary object, as well as each submodel
+        built using `build_model`.
+        """
         super().__init__()
 
-        models = []
-
-        # load in the models from config
         for model_config in config["MODELS"]:
             if "OUTPUT_COV" not in model_config:
                 raise ValueError(
                     "Ensembling not yet available for models without uncertainty estimates."
                 )
-            model, _ = build_model(model_config)
-            models.append(model)
 
-        self.models = nn.ModuleList(models)
-
-        self.average_outputs = bool(config.get("AVERAGE_OUTPUTS"))
-
-    @classmethod
-    def from_ensemble_dir(cls, ensemble_dir):
-        """
-        Load in an ensemble of models.
-        """
-        # load in jsons
-        config_paths = sorted(pathlib.Path(ensemble_dir).glob("*/config.json"))
-        # load in model weights
-        configs = []
-        for path in config_paths:
-            configs.append(build_config(str(path)))
-        # call regular constructor
-        ensemble = cls({"MODELS": configs})
-        # load state dict for each model
-        for model, config in zip(ensemble.models, configs):
-            if "WEIGHTS_PATH" not in config:
+            if "WEIGHTS_PATH" not in model_config:
                 raise ValueError(
                     "Cannot construct ensemble! Not all models have config paramter `WEIGHTS_PATH`."
-                )
-            model.load_state_dict(torch.load(config["WEIGHTS_PATH"]))
-        return ensemble
+                    )
+
+        self.models = nn.ModuleList(built_models)
+        self.average_outputs = bool(config.get("AVERAGE_OUTPUTS"))
+
+#     @classmethod
+#     def from_ensemble_dir(cls, ensemble_dir):
+#         """
+#         Load in an ensemble of models.
+#         """
+#         # load in jsons
+#         config_paths = sorted(pathlib.Path(ensemble_dir).glob("*/config.json"))
+#         # load in model weights
+#         configs = []
+#         for path in config_paths:
+#             configs.append(build_config(str(path)))
+#         # call regular constructor
+#         ensemble = cls({"MODELS": configs})
+#         # load state dict for each model
+#         # for model, config in zip(ensemble.models, configs):
+#         #     if "WEIGHTS_PATH" not in config:
+#         #         raise ValueError(
+#         #             "Cannot construct ensemble! Not all models have config paramter `WEIGHTS_PATH`."
+#         #         )
+#         #     model.load_state_dict(torch.load(config["WEIGHTS_PATH"]))
+#         return ensemble
 
     def forward(self, x):
         # return mean and cholesky covariance of gaussian mixture
@@ -96,3 +97,4 @@ class GerbilizerEnsemble(nn.Module):
         # concatenate mixture_means and chol_mixture_cov to make a (batch, 3, 2) tensor
         # reshape mixture_means to be (batch_size, 1, 2)
         return torch.cat((mixture_means[:, None], chol_mixture_cov), dim=-2)
+

@@ -9,6 +9,7 @@ import torch
 
 from ..architectures.attentionnet import GerbilizerSparseAttentionNet
 from ..architectures.densenet import GerbilizerDenseNet
+from ..architectures.ensemble import GerbilizerEnsemble
 from ..architectures.perceiver import GerbilizerPerceiver
 from ..architectures.reduced import (
     GerbilizerReducedAttentionNet,
@@ -67,6 +68,14 @@ def build_model(config: dict[str, Any]) -> tuple[torch.nn.Module, Callable]:
     if arch in LOOKUP_TABLE:
         model, loss_fn, can_output_cov = LOOKUP_TABLE[arch]
         model = model(config)
+    elif arch == 'GerbilizerEnsemble':
+        # None out the other parameters
+        loss_fn, can_output_cov = None, None
+        built_submodels = []
+        for sub_model_config in config['MODELS']:
+            submodel, _  = build_model(sub_model_config)
+            built_submodels.append(submodel)
+        model = GerbilizerEnsemble(config, built_submodels)
     else:
         raise ValueError(f"ARCHITECTURE {arch} not recognized.")
 
@@ -92,10 +101,7 @@ def build_model(config: dict[str, Any]) -> tuple[torch.nn.Module, Callable]:
         if config.get("REGULARIZE_COV"):
             reg = config["REGULARIZE_COV"]
             if reg == "HALF_NORMAL":
-                arena_dims = (config["ARENA_WIDTH"], config["ARENA_LENGTH"])
-                loss = partial(
-                    gaussian_NLL_half_normal_variances, arena_dims=arena_dims
-                )
+                loss = gaussian_NLL_half_normal_variances
             elif reg == "ENTROPY":
                 loss = gaussian_NLL_entropy_penalty
             else:
@@ -173,3 +179,4 @@ def unscale_output(
         )
 
     return unscaled
+

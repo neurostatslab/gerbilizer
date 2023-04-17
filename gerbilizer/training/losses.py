@@ -77,10 +77,7 @@ def gaussian_NLL(pred: torch.Tensor, target: torch.Tensor):
 
     return loss
 
-
-def gaussian_NLL_half_normal_variances(
-    pred: torch.Tensor, target: torch.Tensor, arena_dims: tuple[float, float]
-):
+def gaussian_NLL_half_normal_variances(pred: torch.Tensor, target: torch.Tensor):
     """
     Regularized version of the gaussian_NLL loss function. Specifically, this
     is the negative log posterior p(mu, Sigma | x) where we place half-Normal
@@ -98,8 +95,8 @@ def gaussian_NLL_half_normal_variances(
         lambda_x sigma^2_x + lambda_y sigma^2_y
 
     to the output of the gaussian_NLL function, where lambda_i is half the
-    squared scale paramater to the half-Normal. If we pick this scale parameter
-    to be half the arena dimension in each direction, we express the belief
+    squared scale paramater to the half-Normal. Since the outputs are scaled to the square
+    [-1, 1]^2, picking prior variances to be 1 expresses the belief
     that about 68% of the time, the variance in the x and y direction should be
     less than half the arena size.
     """
@@ -111,14 +108,7 @@ def gaussian_NLL_half_normal_variances(
     variance_x = cov[:, 0, 0]
     variance_y = cov[:, 1, 1]
 
-    x_dim, y_dim = arena_dims
-
-    get_lambda = lambda dimension: 1 / 2 * (dimension**2)
-
-    lambda_x = get_lambda(x_dim)
-    lambda_y = get_lambda(y_dim)
-
-    return NLL_term + (lambda_x * variance_x) + (lambda_y * variance_y)
+    return NLL_term + 0.5 * (variance_x + variance_y)
 
 
 def gaussian_NLL_entropy_penalty(

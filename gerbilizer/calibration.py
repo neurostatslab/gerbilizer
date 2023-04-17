@@ -194,6 +194,9 @@ class CalibrationAccumulator:
             coords = self._make_coord_array()
 
             mean, cov = model_output[0], model_output[1:]
+            # PREVIOUSLY INPUTTED CHOLESKY COV, NOW INPUTS COV.
+            # mean, cholesky_cov = model_output[0], model_output[1:]
+            # cov = cholesky_cov @ cholesky_cov.T
 
             # evaluate distribution at the gridpoints
             pmf = multivariate_normal(mean=mean, cov=cov).pdf(coords)
@@ -205,6 +208,8 @@ class CalibrationAccumulator:
             coords = self._make_coord_array()
 
             means, covs = model_output[:, 0], model_output[:, 1:]
+            # means, cholesky_covs = model_output[:, 0], model_output[:, 1:]
+            # covs = cholesky_covs @ cholesky_covs.swapaxes(-2, -1)
 
             gaussian_pmfs = [
                 multivariate_normal(mean=mean, cov=cov).pdf(coords)
