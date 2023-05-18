@@ -2,23 +2,16 @@
 
 from collections import namedtuple
 from functools import partial
-from typing import Any, Callable, Union
+from typing import Any, Callable, Dict, Tuple, Union
 
 import numpy as np
 import torch
 
-from ..architectures.attentionnet import GerbilizerSparseAttentionNet
 from ..architectures.densenet import GerbilizerDenseNet
 from ..architectures.ensemble import GerbilizerEnsemble
-from ..architectures.perceiver import GerbilizerPerceiver
-from ..architectures.reduced import (
-    GerbilizerReducedAttentionNet,
-    GerbilizerAttentionHourglassNet,
-)
 from ..architectures.simplenet import GerbilizerSimpleNetwork
 from .losses import (
     se_loss_fn,
-    map_se_loss_fn,
     gaussian_NLL,
     gaussian_NLL_half_normal_variances,
     gaussian_NLL_entropy_penalty,
@@ -29,20 +22,10 @@ ModelType = namedtuple("ModelType", ("model", "non_cov_loss_fn", "can_output_cov
 LOOKUP_TABLE = {
     "GerbilizerDenseNet": ModelType(GerbilizerDenseNet, se_loss_fn, True),
     "GerbilizerSimpleNetwork": ModelType(GerbilizerSimpleNetwork, se_loss_fn, True),
-    "GerbilizerSparseAttentionNet": ModelType(
-        GerbilizerSparseAttentionNet, se_loss_fn, True
-    ),
-    "GerbilizerReducedSparseAttentionNet": ModelType(
-        GerbilizerReducedAttentionNet, se_loss_fn, True
-    ),
-    "GerbilizerAttentionHourglassNet": ModelType(
-        GerbilizerAttentionHourglassNet, map_se_loss_fn, False
-    ),
-    "GerbilizerPerceiver": ModelType(GerbilizerPerceiver, se_loss_fn, True),
 }
 
 
-def build_model(config: dict[str, Any]) -> tuple[torch.nn.Module, Callable]:
+def build_model(config: Dict[str, Any]) -> Tuple[torch.nn.Module, Callable]:
     """
     Specifies model and loss funciton.
 
@@ -126,7 +109,7 @@ def __apply_affine(locations: np.ndarray, A: np.ndarray, b: np.ndarray):
 
 
 def unscale_output(
-    model_output: np.ndarray, arena_dims: Union[tuple[float, float], np.ndarray]
+    model_output: np.ndarray, arena_dims: Union[Tuple[float, float], np.ndarray]
 ) -> np.ndarray:
     """
     Transform model output from arbitrary units on the square [-1, 1]^2 to
