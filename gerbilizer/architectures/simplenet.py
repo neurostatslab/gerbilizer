@@ -19,7 +19,9 @@ class GerbilizerSimpleLayer(torch.nn.Module):
         *,
         downsample,
         dilation,
-        use_bn=True
+        use_bn=True,
+        use_spectral_normalization=False,
+        add_residual=False,
     ):
         super(GerbilizerSimpleLayer, self).__init__()
 
@@ -41,6 +43,11 @@ class GerbilizerSimpleLayer(torch.nn.Module):
             stride=(2 if downsample else 1),
             dilation=dilation,
         )
+
+        if use_spectral_normalization:
+            self.fc = nn.utils.parametrizations.spectral_norm(self.fc)
+            self.gc = nn.utils.parametrizations.spectral_norm(self.gc)
+
         self.batch_norm = (
             torch.nn.BatchNorm1d(channels_out) if use_bn else nn.Identity()
         )
@@ -66,6 +73,7 @@ class GerbilizerSimpleNetwork(GerbilizerArchitecture):
         "CONV_DILATIONS": [1, 1, 1, 1, 1, 1, 1],
         "OUTPUT_COV": True,
         "REGULARIZE_COV": False,
+        "USE_SPECTRAL_NORM": False,
     }
 
     def __init__(self, CONFIG, output_factory: ModelOutputFactory):
@@ -100,6 +108,7 @@ class GerbilizerSimpleNetwork(GerbilizerArchitecture):
         dilations = dilations[:min_len]
 
         use_batch_norm = model_config["USE_BATCH_NORM"]
+        use_spectral_normalization = model_config["USE_SPECTRAL_NORM"]
 
         self.n_channels.insert(0, N)
 
@@ -111,6 +120,7 @@ class GerbilizerSimpleNetwork(GerbilizerArchitecture):
                 downsample=downsample,
                 dilation=dilation,
                 use_bn=use_batch_norm,
+                use_spectral_normalization=use_spectral_normalization
             )
             for in_channels, out_channels, filter_size, downsample, dilation in zip(
                 self.n_channels[:-1],
@@ -130,12 +140,14 @@ class GerbilizerSimpleNetwork(GerbilizerArchitecture):
             )
         self.coord_readout = torch.nn.Linear(self.n_channels[-1], self.n_outputs)
 
-    def _forward(self, x: torch.Tensor) -> torch.Tensor:
+    def _forward(self, x: torch.Tensor, return_hidden: bool = False) -> torch.Tensor:
         x = x.transpose(
             -1, -2
         )  # (batch, seq_len, channels) -> (batch, channels, seq_len) needed by conv1d
         h1 = self.conv_layers(x)
         h2 = torch.squeeze(self.final_pooling(h1), dim=-1)
+        if return_hidden:
+            return h2
         coords = self.coord_readout(h2)
         return coords
 

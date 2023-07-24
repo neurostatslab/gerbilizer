@@ -40,30 +40,41 @@ class GerbilizerArchitecture(torch.nn.Module):
 
         weights = torch.load(weights_path, map_location=device)
         self.load_state_dict(weights)
+        print(f'Loaded weights from {weights_path}.')
 
-    def _forward(self, x: torch.Tensor) -> torch.Tensor:
+    def _forward(self, x: torch.Tensor, return_hidden=False) -> torch.Tensor:
         raise NotImplementedError()
 
     # add overload for nice unbatched functionality
     @overload
-    def forward(self, x: torch.Tensor, unbatched: Literal[False]) -> ModelOutput:
+    def forward(self, x: torch.Tensor, unbatched: Literal[False], return_hidden: Literal[False]) -> ModelOutput:
         ...
 
     @overload
-    def forward(self, x: torch.Tensor, unbatched: Literal[True]) -> list[ModelOutput]:
+    def forward(self, x: torch.Tensor, unbatched: Literal[True], return_hidden: Literal[False]) -> list[ModelOutput]:
         ...
 
-    def forward(self, x: torch.Tensor, unbatched: bool = False):
+    @overload
+    def forward(self, x: torch.Tensor, unbatched: Literal[False], return_hidden: Literal[True]) -> torch.Tensor:
+        ...
+
+    @overload
+    def forward(self, x: torch.Tensor, unbatched: Literal[True], return_hidden: Literal[True]) -> list[torch.Tensor]:
+        ...
+
+    def forward(self, x: torch.Tensor, unbatched: bool = False, return_hidden: bool = False):
         """
         Run the model on input `x` and return an appropriate
         ModelOutput object, determined based on `self.output_factory`.
         """
-        raw_outputs = self._forward(x)
+        raw_outputs = self._forward(x, return_hidden=return_hidden)
+        identity = lambda x: x
+        make_output = identity if return_hidden else self.output_factory.create_output
         if unbatched:
             outputs = []
             for o in raw_outputs:
                 # add batch dim back
-                outputs.append(self.output_factory.create_output(o[None]))
+                outputs.append(make_output(o[None]))
             return outputs
         else:
-            return self.output_factory.create_output(self._forward(x))
+            return make_output(raw_outputs)

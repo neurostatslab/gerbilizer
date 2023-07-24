@@ -92,6 +92,7 @@ def assess_model(
     arena_dims: Union[np.ndarray, tuple[float, float]],
     device="cuda:0",
     visualize=False,
+    save_hidden=False
 ):
     """
     Assess the provided model with uncertainty, storing model output as well as
@@ -129,6 +130,8 @@ def assess_model(
 
         point_predictions = f.create_dataset("point_predictions", shape=(N, 2))
 
+        hidden_representations = []
+
         ca = CalibrationAccumulator(arena_dims)
 
         model.eval()
@@ -140,6 +143,14 @@ def assess_model(
             for sounds, locations in iter(dataloader):
                 sounds = sounds.to(device)
                 outputs: list[ModelOutput] = model(sounds, unbatched=True)
+
+                if save_hidden:
+                    try:
+                        hiddens: list[torch.Tensor] = model(sounds, unbatched=True, return_hidden=True)
+                        hidden_representations += hiddens
+                    except TypeError:
+                        save_hidden=False
+
                 for output, location in zip(outputs, locations):
                     # add batch dimension back
                     if isinstance(model, GerbilizerEnsemble):
@@ -227,6 +238,10 @@ def assess_model(
             )
             for output_name in OUTPUTS:
                 f.create_dataset(output_name, data=results[output_name])
+
+        if save_hidden:
+            hidden_representations = torch.cat(hidden_representations).cpu().numpy()
+            f.create_dataset('hidden_representations', data=hidden_representations)
 
         _, axs = plot_results(f)
         plt.tight_layout()
@@ -326,4 +341,5 @@ if __name__ == "__main__":
         arena_dims,
         device=device,
         visualize=args.visualize,
+        save_hidden=True,
     )
