@@ -152,3 +152,27 @@ def gaussian_NLL_entropy_penalty(
     )
 
     return loss
+
+
+def unsupervised_loss(
+        reconstruction: torch.Tensor,
+        unmasked_input: torch.Tensor,
+        mask: torch.Tensor
+    ):
+    """Computes the average negative cosine similarity between the
+    reconstructed masked elements and their original values
+
+    Args:
+        reconstruction (torch.Tensor): Full output of the unsupervised model. 
+        unmasked_input (torch.Tensor): Full input to the unsupervised model. Shape is (batch, time, d_model)
+        unmasked_input (torch.Tensor): Full input to the unsupervised model. Shape is (batch, time, d_model)
+        mask (torch.Tensor): Boolean array of masked values. Shape is (batch, time)
+    """    
+
+    # Both should have shape (num_mask, d_model)
+    recon_elements = reconstruction[mask, :]
+    orig_elements = unmasked_input[mask, :]
+    recon_mag = torch.linalg.norm(recon_elements, dim=-1)
+    orig_mag = torch.linalg.norm(orig_elements, dim=-1)
+    cos = torch.einsum('td,td,t,t->t', recon_elements, orig_elements, 1/recon_mag, 1/orig_mag)
+    return cos.mean()

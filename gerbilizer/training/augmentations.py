@@ -56,8 +56,51 @@ class TimeMask(nn.Module):
             x[i, start:end, :] = 0
         return x.reshape(*bshape, num_samples, num_channels)
 
+class SpectrogramMask(nn.Module):
+    def __init__(self, prob: float = 0.5, d_model=768):
+        super().__init__()
+        self.prob = prob
 
-def build_augmentations(CONFIG: dict) -> nn.Module:
+        self.mask_token = nn.Parameter(torch.zeros(1, 1, d_model), requires_grad=True)
+        nn.init.uniform_(self.mask_token, -0.1, 0.1)
+    
+    def forward(self, x):
+        # Shape of x: (batch, time, d_model)
+        batch_shape = x.shape[:-2]
+        x = x.reshape(-1, *x.shape[-2:])
+        should_mask = torch.rand(x.shape[0]) < self.prob
+        # mask_idx = torch.nonzero(should_mask).squeeze(1)
+        x[should_mask] = self.mask_token
+        x = x.reshape(*batch_shape, *x.shape[-2:])
+        return x, should_mask
+
+
+class SpectrogramGain(nn.Module):
+    """Spectrogram gain augmentation. Adds a random gain to the spectrogram.
+    """
+    def __init__(self, p: float = 0.5):
+        super().__init__()
+        self.p = p
+        self.dist = torch.distributions.LogNormal(0, 0.25)
+    def forward(self, x):
+        # x shape: (batch..., time, freq)
+        if x.dim() <= 2:
+            # unbatched input
+            if torch.rand() > self.p:
+                return x
+            gain = self.dist.sample()
+            return x * gain
+        # Batched input
+        x = x.reshape(-1, *x.shape[-2:])
+        bsz = x.shape[0]
+        prob_mask = torch.rand(bsz) < self.p  # True for samples which should be augmented
+        noise = self.dist.sample((bsz,))
+        noise[~prob_mask] = 1
+        aug_x = x * noise[:, None, None]
+        return aug_x.reshape(*x.shape)
+
+
+def build_audio_augmentations(CONFIG: dict) -> nn.Module:
     """Builds an augmentation module using the config parameters
     The augmentation module is a subclass of nn.Module which takes in a batched data tensor
     and returns a batched data tensor with the augmentations applied.
@@ -107,3 +150,12 @@ def build_augmentations(CONFIG: dict) -> nn.Module:
         augmentations.append(mask)
 
     return nn.Sequential(*augmentations)
+
+
+def build_spectrogram_augmentations(config: dict):
+    # For now only gain is applied here
+    # Masking for the spectrogram is a bit different becasue the indices are also needed by the loss function
+
+    gain = SpectrogramGain(p=config["AUGMENTATIONS"]["SPECTROGRAM_GAIN"]["PROB"])
+    mask = SpectrogramMask(p=config["AUGMENTATIONS"]["SPECTROGRAM_MASK"]["PROB"])
+    return nn.Sequential(gain, mask)  # returns a tuple (x, boolean mask)

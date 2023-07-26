@@ -56,6 +56,13 @@ DEFAULT_CONFIG = {
             "MIN_LENGTH": 75,  # 0.6 ms at 125 kHz
             "MAX_LENGTH": 125,  # 1 ms at 125 kHz
         },
+
+        "SPECTROGRAM_GAIN": {
+            "PROB": 0.5,
+        },
+        "SPECTROGRAM_MASK": {
+            "PROB": 0.5,
+        },
     },
 }
 

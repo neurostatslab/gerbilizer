@@ -16,7 +16,7 @@ from torch.utils.data import DataLoader
 
 from ..calibration import CalibrationAccumulator
 from ..outputs.base import ModelOutput, ProbabilisticOutput, Unit
-from ..training.augmentations import build_augmentations
+from ..training.augmentations import build_audio_augmentations
 from ..training.dataloaders import GerbilVocalizationDataset, build_dataloaders
 from ..training.logger import ProgressLogger
 from ..training.models import build_model
@@ -91,7 +91,7 @@ class Trainer:
             self.__init_output_dir()
         self.__init_model()
 
-        self.augment = build_augmentations(self.__config)
+        self.augment = build_audio_augmentations(self.__config)
 
         if not self.__eval:
             self.__logger.info(f" ==== STARTING TRAINING ====\n")

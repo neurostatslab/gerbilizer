@@ -14,6 +14,7 @@ from scipy.signal import correlate
 from torch.nn import functional as F
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
+from torchaudio.transforms import MelSpectrogram, Spectrogram
 
 
 class GerbilVocalizationDataset(Dataset):
@@ -184,6 +185,73 @@ class GerbilVocalizationDataset(Dataset):
         return sound, location
 
 
+class GerbilSpectrogramDataset(GerbilVocalizationDataset):
+    def __init__(
+        self,
+        datapath: str,
+        *,
+        crop_length: int = None,
+        mel_spectrogram: bool = False,
+        n_fft: int = 1024,
+        n_mels: int = 128,
+        hop_length: int = 8,
+        f_min: int = 0,
+        f_max: int = 62500,
+        sample_rate: int = 125000,
+    ):
+        """A specialized dataloader for returningi spectrograms instead of raw audio
+
+        Args:
+            datapath (str): Path to HDF5 dataset
+            make_xcorrs (bool, optional): Triggers computation of pairwise correlations between input channels. Defaults to False.
+            inference (bool, optional): When true, labels will be returned in addition to data. Defaults to False.
+            crop_length (int): Determines the length of the returned spectrograms.
+            mel_spectrogram (bool, optional): When true, will return mel spectrograms instead of linear spectrograms. Defaults to False.
+            n_fft (int, optional): Number of FFT bins. Defaults to 1024.
+            n_mels (int, optional): Number of mel bins. Defaults to 128.
+            hop_length (int, optional): Hop length for STFT. Defaults to 8.
+            f_min (int, optional): Minimum frequency for spectrogram. Defaults to 0.
+            f_max (int, optional): Maximum frequency for spectrogram. Defaults to 62500.
+            sample_rate (int, optional): Sample rate of audio. Defaults to 125000.
+        """
+
+        super().__init__(datapath, inference=True, crop_length=crop_length, arena_dims=None)
+    
+        self.use_mel = mel_spectrogram
+        self.n_fft = n_fft
+        self.n_mels = n_mels
+        self.hop_length = hop_length
+        self.f_min = f_min
+        self.f_max = f_max
+        self.sample_rate = sample_rate
+
+        if self.use_mel:
+            # TODO: if this whole mel spectrogram thing doesn't work out, consider incorporating phase information
+            self.spec_transform = MelSpectrogram(
+                sample_rate=self.sample_rate,
+                n_fft=self.n_fft,
+                n_mels=self.n_mels,
+                hop_length=self.hop_length,
+                f_min=self.f_min,
+                f_max=self.f_max,
+            )
+        else:
+            self.spec_transform = Spectrogram(
+                n_fft=self.n_fft,
+                hop_length=self.hop_length,
+                f_min=self.f_min,
+                f_max=self.f_max,
+            )
+    
+    def __getitem__(self, idx: int):
+        audio = self.__processed_data_for_index__(idx)
+        return self.__make_spectrogram(audio)
+
+
+    def __make_spectrogram(self, audio: torch.Tensor):
+        return self.spec_transform(audio)
+
+
 def build_dataloaders(path_to_data: str, config: dict):
     # Construct Dataset objects.
     train_path = os.path.join(path_to_data, "train_set.h5")
@@ -234,3 +302,19 @@ def build_dataloaders(path_to_data: str, config: dict):
         test_dataloader = None
 
     return train_dataloader, val_dataloader, test_dataloader
+
+
+def build_spectrogram_dataloader(path_to_data: str, config: dict):
+    batch_size = config["DATA"]["BATCH_SIZE"]
+    crop_length = config["DATA"]["CROP_LENGTH"]
+
+    avail_cpus = max(1, len(os.sched_getaffinity(0)) - 1)
+
+    traindata = GerbilVocalizationDataset(
+        path_to_data,
+        crop_length=crop_length,
+    )
+    train_dataloader = DataLoader(
+        traindata, batch_size=batch_size, shuffle=True, num_workers=avail_cpus
+    )
+    return train_dataloader
