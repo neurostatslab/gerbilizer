@@ -110,17 +110,14 @@ def validate_args(args):
     # place output directly into directory user provides if bare flag is enabled
     if args.bare:
         args.model_dir = args.save_path
-        if not path.exists(args.model_dir):
-            pathlib.Path(args.model_dir).mkdir(exist_ok=True, parents=True)
     else:
-        if not path.exists(args.save_path):
-            os.makedirs(args.save_path)
         args.model_dir = path.join(
             args.save_path,
             "trained_models",
             args.config_data["GENERAL"]["CONFIG_NAME"],
             f"{args.job_id:0>5d}",
         )
+    pathlib.Path(args.model_dir).mkdir(parents=True, exist_ok=True)
 
 
 def run_eval(args: argparse.Namespace, trainer: Trainer):

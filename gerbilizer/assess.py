@@ -319,15 +319,12 @@ if __name__ == "__main__":
         str(args.data),
         arena_dims=arena_dims,
         make_xcorrs=config_data["DATA"]["COMPUTE_XCORRS"],
-        crop_length=config_data["DATA"].get("CROP_LENGTH", None),
-        sequential=True,
+        crop_length=config_data["DATA"]["CROP_LENGTH"],
     )
 
-    # function that torch dataloader uses to assemble batches.
-    # in our case, applying this is necessary because of the structure of the
-    # dataset class (which was created to accomodate variable length batches, so it's a little wonky)
+    batch_size = config_data["DATA"]["BATCH_SIZE"]
     dataloader = DataLoader(
-        dataset, batch_size=1, shuffle=False, collate_fn=dataset.collate_fn
+        dataset, batch_size=batch_size, shuffle=False
     )
 
     # make the parent directories for the desired outfile if they don't exist

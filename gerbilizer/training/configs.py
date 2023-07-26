@@ -36,7 +36,7 @@ DEFAULT_CONFIG = {
         "NUM_MICROPHONES": 4,
         "SAMPLE_RATE": 125000,
         "COMPUTE_XCORRS": False,
-        "TRAIN_BATCH_MAX_SAMPLES": 200_000,
+        "BATCH_SIZE": 32,
         "CROP_LENGTH": 8192,
         "AUGMENT_DATA": True,
         "ARENA_DIMS": [558.9, 355.6],

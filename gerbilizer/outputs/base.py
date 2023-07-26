@@ -324,7 +324,14 @@ class MDNOutput(ProbabilisticOutput):
         for response in self.responses:
             if not isinstance(response, UniformOutput):
                 to_include.append(response.point_estimate())
-        return sum(to_include) / len(to_include)
+
+        point_estimates = torch.stack(to_include, dim=1)  # (self.batch_size, R, 2)
+        weights = torch.exp(self.log_weights)  # (self.batch_size, R)
+        reweighted_estimates = (
+            point_estimates * weights[..., None]
+        )  # (self.batch_size, R, 2)
+
+        return reweighted_estimates.sum(dim=1)  # (self.batch_size, 2)
 
 
 class EnsembleOutput(ProbabilisticOutput):

@@ -87,8 +87,8 @@ class Trainer:
         print(f"Using device: {self.device}")
 
         if not self.__eval:
-            self.__init_output_dir()
             self.__init_dataloaders()
+            self.__init_output_dir()
         self.__init_model()
 
         self.augment = build_augmentations(self.__config)
@@ -121,12 +121,6 @@ class Trainer:
         print(f"Saving logs to file: `{log_filepath}`")
 
     def __init_output_dir(self):
-        # if path.exists(self.__model_dir):
-        #     raise ValueError(
-        #         f"Model directory {self.__model_dir} already exists. Perhaps this job id is taken?"
-        #     )
-        # os.makedirs(self.__model_dir)
-
         self.__best_weights_file = os.path.join(self.__model_dir, "best_weights.pt")
         self.__init_weights_file = os.path.join(self.__model_dir, "init_weights.pt")
         self.__final_weights_file = os.path.join(self.__model_dir, "final_weights.pt")
@@ -138,7 +132,6 @@ class Trainer:
 
         self.__init_logger()
 
-        self.__traindata, self.__valdata, self.__testdata = self.__init_dataloaders()
         if self.__traindata is not None:
             self.__logger.info(f"Training set:\t{self.__traindata.dataset}")
         if self.__valdata is not None:
@@ -158,7 +151,7 @@ class Trainer:
 
     def __init_dataloaders(self):
         # Load training set, validation set, test set.
-        return build_dataloaders(self.__datafile, self.__config)
+        self.__traindata, self.__valdata, self.__testdata = build_dataloaders(self.__datafile, self.__config)
 
     def __init_model(self):
         """Creates the model, optimizer, and loss function."""
@@ -298,7 +291,7 @@ class Trainer:
 
             # Count batch as completed.
             self.__progress_log.log_train_batch(
-                mean_loss.item(), np.nan, sounds.shape[0] * sounds.shape[1]
+                mean_loss.item(), np.nan, sounds.shape[0]
             )
             iter += 1
             # if iter > 10: break
@@ -347,7 +340,7 @@ class Trainer:
                     self.__progress_log.log_val_batch(
                         batch_err / sounds.shape[0],
                         np.nan,
-                        sounds.shape[0] * sounds.shape[1],
+                        sounds.shape[0],
                     )
 
             # Done with epoch.
@@ -415,7 +408,8 @@ class Trainer:
             inference=True,
         )
 
-        dloader = DataLoader(dset, collate_fn=dset.collate_fn)
+        batch_size = self.__config["DATA"]["BATCH_SIZE"]
+        dloader = DataLoader(dset, batch_size=batch_size, shuffle=False)
 
         self.model.eval()
         self.model.to(self.device)
