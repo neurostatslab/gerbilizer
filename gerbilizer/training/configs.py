@@ -16,12 +16,13 @@ JSON = NewType("JSON", dict)
 DEFAULT_CONFIG = {
     "OPTIMIZATION": {
         "NUM_TRAIN_STEPS": 100000,
-        "STEPS_PER_SCHEDULER_UPDATE": 1000,
+        "STEPS_PER_SCHEDULER_UPDATE": 20,
         "OPTIMIZER": "SGD",
         "MOMENTUM": 0.9,
         "CLIP_GRADIENTS": False,
         "INITIAL_LEARNING_RATE": 0.02,
         "SCHEDULERS": [
+            {"SCHEDULER_TYPE": "LINEAR", "NUM_EPOCHS_ACTIVE": 5},
             {"SCHEDULER_TYPE": "COSINE_ANNEALING", "MIN_LEARNING_RATE": 0.0}
         ],
         "LOSS": "COSINE",
@@ -38,12 +39,13 @@ DEFAULT_CONFIG = {
         "NUM_MICROPHONES": 4,
         "SAMPLE_RATE": 125000,
         "COMPUTE_XCORRS": False,
+        "MAKE_SPECTROGRAMS": False,
         "BATCH_SIZE": 32,
         "CROP_LENGTH": 8192,
-        "AUGMENT_DATA": True,
         "ARENA_DIMS": [558.9, 355.6],
     },
     "AUGMENTATIONS": {
+        "AUGMENT_DATA": True,
         # Data augmentations: involves performing augmentations to the audio to which the model should be invariant
         "INVERSION": {
             "PROB": 0.5,

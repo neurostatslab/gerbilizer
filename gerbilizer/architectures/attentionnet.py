@@ -6,6 +6,7 @@ from torch import nn
 from torch.nn import functional as F
 
 from ..training.augmentations import build_audio_augmentations
+from ..training.configs import update_recursively
 
 
 class Transpose(nn.Module):
@@ -57,7 +58,7 @@ class TokenizerSimpleLayer(torch.nn.Module):
             stride=stride,
             groups=channels_in,
         )
-        self.norm = torch.nn.LayerNorm(channels_out)
+        self.norm = torch.nn.BatchNorm1d(channels_out)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         fcx = self.fc(x)
@@ -120,10 +121,11 @@ class ConvolutionalTokenizer(Tokenizer):
         "TAU_NUM_STEPS": 75_000,
     }
 
-    def __init__(self, config: dict, *, create_teacher: bool=False):
+    def __init__(self, config: dict, *, create_teacher: bool=True):
         super().__init__()
-        tokenizer_config = ConvolutionalTokenizer.default_config.copy()
-        tokenizer_config.update(config['MODEL_PARAMS']['TOKENIZER'])
+        tokenizer_config = config['MODEL_PARAMS'].get("TOKENIZER", {})
+        update_recursively(tokenizer_config, ConvolutionalTokenizer.default_config)
+        config['MODEL_PARAMS']['TOKENIZER'] = tokenizer_config  # Allow changes to propagate to the config file saved to the model directory
 
         n_mics = config['DATA']['NUM_MICROPHONES']
         updated_stride = [s * n_mics for s in tokenizer_config['STRIDES']]
@@ -153,7 +155,7 @@ class ConvolutionalTokenizer(Tokenizer):
             self.requires_grad_(False)
             self.is_teacher = True
         
-        self.augment = build_audio_augmentations(config['DATA']['AUGMENTATIONS'])
+        self.augment = build_audio_augmentations(config)
 
     @property
     def tau(self) -> float:
@@ -207,7 +209,7 @@ class GerbilizerAttentionNet(nn.Module):
         "MASKS_PER_SEQUENCE": 16,
 
         "ENCODER": {
-            "D_MODEL": 1024,
+            "D_MODEL": 768,
             "NUM_LAYERS": 6,
             "NUM_HEADS": 8,
             "D_FF": 2048,
@@ -225,8 +227,11 @@ class GerbilizerAttentionNet(nn.Module):
     }
 
     def __init__(self, config: dict):
-        model_config = GerbilizerAttentionNet.default_config.copy()
-        model_config.update(config['MODEL_PARAMS'])
+        super().__init__()
+        model_config = config.get('MODEL_PARAMS', {})
+        update_recursively(model_config, GerbilizerAttentionNet.default_config)
+        config['MODEL_PARAMS'] = model_config  # Allow changes to propagate to the config file saved to the model directory
+
 
         encoder_config = model_config["ENCODER"]
         decoder_config = model_config["DECODER"]
@@ -246,20 +251,20 @@ class GerbilizerAttentionNet(nn.Module):
         # A little something for the IDE
         self.tokenizer: Tokenizer
         if tokenizer_config["TYPE"] == "CONVOLUTIONAL":
-            self.tokenizer = ConvolutionalTokenizer(model_config)
+            self.tokenizer = ConvolutionalTokenizer(config)
         elif tokenizer_config["TYPE"] == "SPECTROGRAM":
-            self.tokenizer = SpectrogramTokenizer(model_config)
+            self.tokenizer = SpectrogramTokenizer(config)
         else:
             raise ValueError("Tokenizer type not recognized")
         
         self.encoder = nn.TransformerEncoder(
             nn.TransformerEncoderLayer(
                 d_model=d_model,
-                nhead=model_config["NUM_HEADS"],
-                dim_feedforward=model_config["D_FF"],
+                nhead=encoder_config["NUM_HEADS"],
+                dim_feedforward=encoder_config["D_FF"],
                 dropout=0.1,
             ),
-            num_layers=model_config["NUM_LAYERS"],
+            num_layers=encoder_config["NUM_LAYERS"],
         )
 
         self.decoder = nn.TransformerEncoder(
@@ -305,7 +310,7 @@ class GerbilizerAttentionNet(nn.Module):
         """ Creates a shuffling permutation for a given mask
         The permutation is such that the unmasked tokens are at the beginning of the sequence
         """
-        return mask.argsort(dim=-1, descending=True)
+        return mask.int().argsort(dim=-1, descending=True)
 
     def mask_sequence(self, tokens: torch.FloatTensor) -> Tuple[torch.FloatTensor, torch.IntTensor]:
         """
@@ -323,7 +328,7 @@ class GerbilizerAttentionNet(nn.Module):
         mask = torch.stack([
             GerbilizerAttentionNet.__block_mask(num_tokens, num_unmasked, self.mask_block_length)
             for _ in range(num_masks)
-        ]).reshape(bsz, self.masks_per_sequence, num_tokens)
+        ]).reshape(bsz, self.masks_per_sequence, num_tokens).to(tokens.device)
 
         shuffling = GerbilizerAttentionNet.__shuffling_for_mask(mask)
         unshuffling = shuffling.argsort(dim=-1)
@@ -343,7 +348,7 @@ class GerbilizerAttentionNet(nn.Module):
         # Unshuffling shape: (bsz, masks_per_sequence, seq_len)
         bsz, _, seq_len = unshuffling.shape
         d_model = encoded_tokens.shape[-1]
-        num_unmasked = encoded_tokens.shape(-2)
+        num_unmasked = encoded_tokens.shape[-2]
         num_masked = unshuffling.shape[2] - num_unmasked
 
         expanded_mask_token = self.mask_token[None, None, :].expand(bsz * self.masks_per_sequence, num_masked, -1)
@@ -361,6 +366,7 @@ class GerbilizerAttentionNet(nn.Module):
         teacher_tokens = self.tokenizer.teacher_forward(x)
         student_tokens = self.tokenizer(x)  # (bsz, seq_len, d_model)
         # Tokenizer handles initial application of positional encoding
+        print("Tokenizer standard deviation: ", x.detach().cpu().std(dim=-2).mean())
 
         # Then mask the tokens
         unmasked_tokens, unshuffling = self.mask_sequence(student_tokens)

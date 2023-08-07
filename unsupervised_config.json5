@@ -1,0 +1,45 @@
+{
+    "OPTIMIZATION": {
+        "NUM_TRAIN_STEPS": 100_000,
+        "STEPS_PER_SCHEDULER_UPDATE": 20,
+        "OPTIMIZER": "SGD",
+        "MOMENTUM": 0.9,
+        "WEIGHT_DECAY": 1e-05,
+        "CLIP_GRADIENTS": true,
+        "SCHEDULERS": [
+            {"SCHEDULER_TYPE": "LINEAR", "NUM_EPOCHS_ACTIVE": 5},
+            {"SCHEDULER_TYPE": "COSINE_ANNEALING", "MIN_LEARNING_RATE": 0.0}
+        ],
+        "LOSS": "COSINE",
+    },
+
+    "ARCHITECTURE": "unsupervised",  // not that this is doing anything
+    "MODEL_PARAMS": {
+        
+    },
+
+    "GENERAL": {
+        "CONFIG_NAME": "simple_network",
+        "DEVICE": "GPU",  // 'GPU' or 'CPU'
+        "TORCH_SEED": 888,  // rng seeds for reproducibility
+        "NUMPY_SEED": 777,
+        "LOG_INTERVAL": 3,  // Amount of time between consecutive log messages
+    },
+
+    "DATA": {
+        "NUM_MICROPHONES": 4,
+        "COMPUTE_XCORRS": false, 
+        "BATCH_SIZE": 32,
+        "CROP_LENGTH": 8192,
+        "ARENA_DIMS": [558.9, 355.6],
+        "ARENA_DIMS_UNITS": "MM",
+        "SAMPLE_RATE": 125000
+    },
+
+    "AUGMENTATIONS": {
+        "AUGMENT_LABELS": false,  // controls mirroring and channel permutation augmentations
+        "AUGMENT_DATA": true, // controls noise addition
+
+        "MASK": {"PROB": 0},  // Don't interfere with the SSL masking procedure
+    },
+}
