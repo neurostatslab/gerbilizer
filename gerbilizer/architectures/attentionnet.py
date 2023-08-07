@@ -366,7 +366,6 @@ class GerbilizerAttentionNet(nn.Module):
         teacher_tokens = self.tokenizer.teacher_forward(x)
         student_tokens = self.tokenizer(x)  # (bsz, seq_len, d_model)
         # Tokenizer handles initial application of positional encoding
-        print("Tokenizer standard deviation: ", x.detach().cpu().std(dim=-2).mean())
 
         # Then mask the tokens
         unmasked_tokens, unshuffling = self.mask_sequence(student_tokens)

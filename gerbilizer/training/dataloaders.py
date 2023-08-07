@@ -5,6 +5,7 @@ Functions to construct Datasets and DataLoaders for training and inference
 import os
 from itertools import combinations
 from math import comb
+from pathlib import Path
 from typing import Optional, Tuple, Union
 
 import h5py
@@ -13,7 +14,7 @@ import torch
 from scipy.signal import correlate
 from torch.nn import functional as F
 from torch.nn.utils.rnn import pad_sequence
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import ConcatDataset, DataLoader, Dataset
 from torchaudio.transforms import MelSpectrogram, Spectrogram
 
 
@@ -35,10 +36,7 @@ class GerbilVocalizationDataset(Dataset):
             inference (bool, optional): When true, labels will be returned in addition to data. Defaults to False.
             crop_length (int): When provided, will serve random crops of fixed length instead of full vocalizations
         """
-        if isinstance(datapath, str):
-            self.dataset = h5py.File(datapath, "r")
-        else:
-            self.dataset = datapath
+        self.dataset = h5py.File(datapath, "r")
 
         if "len_idx" not in self.dataset:
             raise ValueError("Improperly formatted dataset")
@@ -307,13 +305,26 @@ def build_dataloaders(path_to_data: str, config: dict):
 def build_unsupervised_dataloader(path_to_data: str, config: dict):
     batch_size = config["DATA"]["BATCH_SIZE"]
     crop_length = config["DATA"]["CROP_LENGTH"]
+    use_spec = config['DATA'].get('MAKE_SPECTROGRAMS', False)
 
-    if config['DATA'].get('MAKE_SPECTROGRAMS', False):
-        dataset = GerbilSpectrogramDataset(path_to_data, crop_length=crop_length)
+    datasets = []
+    if Path(path_to_data).is_dir():
+        dp = Path(path_to_data)
+        dset_filepaths = list(dp.glob("*.h5"))
     else:
-        dataset = GerbilVocalizationDataset(path_to_data, crop_length=crop_length, inference=True, arena_dims=None)
+        dset_filepaths = [path_to_data]
+
+    if not dset_filepaths:
+        raise ValueError(f"No HDF5 files found in {path_to_data}")
+
+    for dset_filepath in dset_filepaths:
+        if use_spec:
+            datasets.append(GerbilSpectrogramDataset(dset_filepath, crop_length=crop_length))
+        else:
+            datasets.append(GerbilVocalizationDataset(dset_filepath, crop_length=crop_length, inference=True, arena_dims=None))
 
     avail_cpus = max(1, len(os.sched_getaffinity(0)) - 1)
+    dataset = ConcatDataset(datasets)
 
     dataloader = DataLoader(
         dataset, batch_size=batch_size, shuffle=True, num_workers=avail_cpus
