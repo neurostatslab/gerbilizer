@@ -15,16 +15,18 @@ except ImportError:
 JSON = NewType("JSON", dict)
 DEFAULT_CONFIG = {
     "OPTIMIZATION": {
-        "NUM_EPOCHS": 30,
+        "NUM_TRAIN_STEPS": 100000,
+        "STEPS_PER_SCHEDULER_UPDATE": 1000,
         "OPTIMIZER": "SGD",
         "MOMENTUM": 0.9,
         "CLIP_GRADIENTS": False,
-        "INITIAL_LEARNING_RATE": 0.0005,
+        "INITIAL_LEARNING_RATE": 0.02,
         "SCHEDULERS": [
             {"SCHEDULER_TYPE": "COSINE_ANNEALING", "MIN_LEARNING_RATE": 0.0}
         ],
+        "LOSS": "COSINE",
     },
-    "ARCHITECTURE": "GerbilizerSimpleNetwork",
+    "ARCHITECTURE": "unsupervised",
     "GENERAL": {
         "CONFIG_NAME": "simple_network",
         "DEVICE": "GPU",  # 'GPU' or 'CPU'

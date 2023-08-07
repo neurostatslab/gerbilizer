@@ -8,9 +8,9 @@ import torch
 from torch.optim.lr_scheduler import (CosineAnnealingLR, ExponentialLR,
                                       ReduceLROnPlateau, SequentialLR)
 
-from ..training.augmentations import build_audio_augmentations
-from ..training.logger import ProgressLogger
-from .losses import unsupervised_loss
+from ..architectures.attentionnet import GerbilizerAttentionNet
+from .logger import ProgressLogger
+from .losses import unsupervised_cosine_loss, unsupervised_mse_loss
 from .trainer import make_logger
 
 try:
@@ -23,8 +23,6 @@ except ImportError:
     import json
 
     using_json5 = False
-from .augmentations import (build_audio_augmentations,
-                            build_spectrogram_augmentations)
 from .dataloaders import build_spectrogram_dataloader
 from .trainer import JSON, Trainer
 
@@ -37,10 +35,10 @@ class UnsupervisedTrainer(Trainer):
         config_data: JSON,
     ):
         super().__init__(data_dir, model_dir, config_data, eval_mode=False)
-        self.augment = None
-        self.audio_augmentations = build_audio_augmentations(config_data)
-        self.spec_augmentations = build_spectrogram_augmentations(config_data)
         self.recent_batches_processed = 0
+        self.num_steps = 0
+        self.num_train_steps = self.__config["OPTIMIZATION"]["NUM_TRAIN_STEPS"]
+        self.steps_per_scheduler_update = self.__config["OPTIMIZATION"]["STEPS_PER_SCHEDULER_UPDATE"]
 
     def __init_dataloaders(self):
         self.train_loader = build_spectrogram_dataloader(self.__datafile, self.__config)
@@ -73,7 +71,14 @@ class UnsupervisedTrainer(Trainer):
         torch.manual_seed(self.__config["GENERAL"]["TORCH_SEED"])
         np.random.seed(self.__config["GENERAL"]["NUMPY_SEED"])
 
-        self.loss_fn = unsupervised_loss
+        self.model = GerbilizerAttentionNet(self.__config)
+
+        if self.__config['OPTIMIZATION']['LOSS'] == 'L2':
+            self.loss_fn = unsupervised_mse_loss
+        elif self.__config['OPTIMIZATION']['LOSS'] == 'COSINE':
+            self.loss_fn = unsupervised_cosine_loss
+        else:
+            raise NotImplementedError(f'Unrecognized loss function {self.__config["OPTIMIZATION"]["LOSS"]}')
 
         filemode = "wb" if using_json5 else "w"
         with open(os.path.join(self.__model_dir, "config.json"), filemode) as ctx:
@@ -181,21 +186,21 @@ class UnsupervisedTrainer(Trainer):
         
         batch = self.fetch_data()
         batch = batch.to(self.device)
-        batch = self.spec_augmentations(batch)
-        output, mask = self.model(batch)
-        loss = self.loss_fn(output, batch, mask)
+        reconstructed_tokens, teacher_tokens = self.model(batch)
+        loss = self.loss_fn(reconstructed_tokens, teacher_tokens)
         loss.backward()
 
         self.__optim.step()
-        self.__scheduler.step()
+        # Don't forget to step the teacher weights too
+        self.model.tokenizer.step_teacher()
         self.num_steps += 1
         self.recent_batches_processed += 1
 
-        if self.__progress_log.last_log_time - time.time() > 5:
-            self.__progress_log.log_train_batch(loss.item(), np.nan, self.recent_batches_processed)
-            self.recent_batches_processed = 0
+        return loss
 
     def train(self):
-        for _ in range(self.num_epochs):
-            self.train_step()
-    
+        while self.num_steps < self.num_train_steps:
+            for _ in range(self.steps_per_scheduler_update):
+                last_loss = self.train_step()
+            self.__scheduler.step()
+            self.__progress_log.log_train_batch(last_loss.item(), np.nan, self.steps_per_scheduler_update)

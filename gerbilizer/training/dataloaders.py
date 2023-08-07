@@ -172,7 +172,7 @@ class GerbilVocalizationDataset(Dataset):
         # shape: (2 (x/y coordinates), )
         location = None if self.inference else self.__label_for_index(self.dataset, idx)
 
-        arena_dims = np.array(self.arena_dims)
+        arena_dims = np.array(self.arena_dims) if self.arena_dims is not None else None
         sound, location = GerbilVocalizationDataset.scale_features(
             sound,
             location,
@@ -304,17 +304,19 @@ def build_dataloaders(path_to_data: str, config: dict):
     return train_dataloader, val_dataloader, test_dataloader
 
 
-def build_spectrogram_dataloader(path_to_data: str, config: dict):
+def build_unsupervised_dataloader(path_to_data: str, config: dict):
     batch_size = config["DATA"]["BATCH_SIZE"]
     crop_length = config["DATA"]["CROP_LENGTH"]
 
+    if config['DATA'].get('MAKE_SPECTROGRAMS', False):
+        dataset = GerbilSpectrogramDataset(path_to_data, crop_length=crop_length)
+    else:
+        dataset = GerbilVocalizationDataset(path_to_data, crop_length=crop_length, inference=True, arena_dims=None)
+
     avail_cpus = max(1, len(os.sched_getaffinity(0)) - 1)
 
-    traindata = GerbilVocalizationDataset(
-        path_to_data,
-        crop_length=crop_length,
+    dataloader = DataLoader(
+        dataset, batch_size=batch_size, shuffle=True, num_workers=avail_cpus
     )
-    train_dataloader = DataLoader(
-        traindata, batch_size=batch_size, shuffle=True, num_workers=avail_cpus
-    )
-    return train_dataloader
+
+    return dataloader
