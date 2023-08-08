@@ -64,7 +64,9 @@ class UnsupervisedTrainer():
         self.__logger.info(
             f">> SAVING INITIAL MODEL WEIGHTS TO {self.__final_weights_file}"
         )
+
         self.save_weights(self.__final_weights_file)
+        self.last_weight_update = time.time()
 
         self.recent_batches_processed = 0
         self.num_steps = 0
@@ -247,3 +249,6 @@ class UnsupervisedTrainer():
                 last_loss = self.train_step()
             self.__scheduler.step()
             self.__progress_log.log_train_batch(last_loss.item(), np.nan, self.steps_per_scheduler_update * self.__config['DATA']['BATCH_SIZE'])
+            if time.time() - self.last_weight_update > self.__config['OPTIMIZATION']['SAVE_WEIGHTS_INTERVAL']:
+                self.save_weights(self.__final_weights_file)
+                self.last_weight_update = time.time()

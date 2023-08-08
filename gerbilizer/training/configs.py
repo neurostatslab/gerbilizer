@@ -26,6 +26,7 @@ DEFAULT_CONFIG = {
             {"SCHEDULER_TYPE": "COSINE_ANNEALING", "MIN_LEARNING_RATE": 0.0}
         ],
         "LOSS": "COSINE",
+        "SAVE_WEIGHTS_INTERVAL": 3600,  # one hour in seconds
     },
     "ARCHITECTURE": "unsupervised",
     "GENERAL": {
