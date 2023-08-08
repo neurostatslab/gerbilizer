@@ -155,16 +155,16 @@ def gaussian_NLL_entropy_penalty(
 
 
 def unsupervised_cosine_loss(
-        reconstruction: torch.Tensor,
-        teacher_tokens: torch.Tensor,
-    ):
+    reconstruction: torch.Tensor,
+    teacher_tokens: torch.Tensor,
+):
     """Computes the average negative cosine similarity between the
     reconstructed masked elements and their target values (provided via a teacher model)
 
     Args:
-        reconstruction (torch.Tensor): Full output of the unsupervised model. 
+        reconstruction (torch.Tensor): Full output of the unsupervised model.
         teacher_tokens (torch.Tensor): Target values for the masked elements of the reconstruction.
-    """    
+    """
 
     # reconstruction has an additional dimension that teacher tokens does not have, unsqueeze one in
     teacher_tokens = teacher_tokens.unsqueeze(1)
@@ -172,22 +172,30 @@ def unsupervised_cosine_loss(
     # Both should have shape (batch..., seq_len, d_model)
     recon_mag = torch.linalg.norm(reconstruction, dim=-1)
     orig_mag = torch.linalg.norm(teacher_tokens, dim=-1)
-    cos = torch.einsum('...td,...td,...t,...t->...t', reconstruction, teacher_tokens, 1/recon_mag, 1/orig_mag)
+    cos = torch.einsum(
+        "...td,...td,...t,...t->...t",
+        reconstruction,
+        teacher_tokens,
+        1 / recon_mag,
+        1 / orig_mag,
+    )
     # Add 1 for aesthetic purposes, so the minimum possible loss is 0
-    return 1-cos.mean()  # high cosine similarity is good, so negate it in the context of minimization
+    return (
+        1 - cos.mean()
+    )  # high cosine similarity is good, so negate it in the context of minimization
 
 
 def unsupervised_mse_loss(
-        reconstruction: torch.Tensor,
-        teacher_tokens: torch.Tensor,
-    ):
+    reconstruction: torch.Tensor,
+    teacher_tokens: torch.Tensor,
+):
     """Computes the average squared error between the reconstructed elements
     and their target values (provided via a teacher model)
 
     Args:
-        reconstruction (torch.Tensor): Full output of the unsupervised model. 
+        reconstruction (torch.Tensor): Full output of the unsupervised model.
         teacher_tokens (torch.Tensor): Target values for the masked elements of the reconstruction.
-    """    
+    """
     # reconstruction has an additional dimension that teacher tokens does not have, unsqueeze one in
     teacher_tokens = teacher_tokens.unsqueeze(1)
 

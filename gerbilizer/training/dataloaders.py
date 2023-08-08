@@ -46,9 +46,9 @@ class GerbilVocalizationDataset(Dataset):
         self.arena_dims = arena_dims
         self.crop_length = crop_length
         self.n_channels = None
-    
+
     def __len__(self):
-        return len(self.dataset['len_idx']) - 1
+        return len(self.dataset["len_idx"]) - 1
 
     def __getitem__(self, idx):
         return self.__processed_data_for_index__(idx)
@@ -213,8 +213,10 @@ class GerbilSpectrogramDataset(GerbilVocalizationDataset):
             sample_rate (int, optional): Sample rate of audio. Defaults to 125000.
         """
 
-        super().__init__(datapath, inference=True, crop_length=crop_length, arena_dims=None)
-    
+        super().__init__(
+            datapath, inference=True, crop_length=crop_length, arena_dims=None
+        )
+
         self.use_mel = mel_spectrogram
         self.n_fft = n_fft
         self.n_mels = n_mels
@@ -240,11 +242,10 @@ class GerbilSpectrogramDataset(GerbilVocalizationDataset):
                 f_min=self.f_min,
                 f_max=self.f_max,
             )
-    
+
     def __getitem__(self, idx: int):
         audio = self.__processed_data_for_index__(idx)
         return self.__make_spectrogram(audio)
-
 
     def __make_spectrogram(self, audio: torch.Tensor):
         return self.spec_transform(audio)
@@ -283,7 +284,9 @@ def build_dataloaders(path_to_data: str, config: dict):
             make_xcorrs=make_xcorrs,
             crop_length=crop_length,
         )
-        val_dataloader = DataLoader(valdata, batch_size=batch_size, num_workers=avail_cpus, shuffle=False)
+        val_dataloader = DataLoader(
+            valdata, batch_size=batch_size, num_workers=avail_cpus, shuffle=False
+        )
     else:
         val_dataloader = None
 
@@ -295,7 +298,9 @@ def build_dataloaders(path_to_data: str, config: dict):
             make_xcorrs=make_xcorrs,
             inference=True,
         )
-        test_dataloader = DataLoader(testdata, shuffle=False, batch_size=batch_size, num_workers=avail_cpus)
+        test_dataloader = DataLoader(
+            testdata, shuffle=False, batch_size=batch_size, num_workers=avail_cpus
+        )
     else:
         test_dataloader = None
 
@@ -305,7 +310,7 @@ def build_dataloaders(path_to_data: str, config: dict):
 def build_unsupervised_dataloader(path_to_data: str, config: dict):
     batch_size = config["DATA"]["BATCH_SIZE"]
     crop_length = config["DATA"]["CROP_LENGTH"]
-    use_spec = config['DATA'].get('MAKE_SPECTROGRAMS', False)
+    use_spec = config["DATA"].get("MAKE_SPECTROGRAMS", False)
 
     datasets = []
     if Path(path_to_data).is_dir():
@@ -319,9 +324,18 @@ def build_unsupervised_dataloader(path_to_data: str, config: dict):
 
     for dset_filepath in dset_filepaths:
         if use_spec:
-            datasets.append(GerbilSpectrogramDataset(dset_filepath, crop_length=crop_length))
+            datasets.append(
+                GerbilSpectrogramDataset(dset_filepath, crop_length=crop_length)
+            )
         else:
-            datasets.append(GerbilVocalizationDataset(dset_filepath, crop_length=crop_length, inference=True, arena_dims=None))
+            datasets.append(
+                GerbilVocalizationDataset(
+                    dset_filepath,
+                    crop_length=crop_length,
+                    inference=True,
+                    arena_dims=None,
+                )
+            )
 
     avail_cpus = max(1, len(os.sched_getaffinity(0)) - 1)
     dataset = ConcatDataset(datasets)

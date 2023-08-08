@@ -28,7 +28,7 @@ def get_args():
         "--save-path",
         type=str,
         required=False,
-        default=Path('.').absolute(),
+        default=Path(".").absolute(),
         help="Directory for trained models' weights",
     )
 
@@ -64,7 +64,7 @@ def validate_args(args):
     model_dir = Path(args.model_dir)
     if not model_dir.exists():
         model_dir.mkdir(exist_ok=True, parents=True)
-    
+
 
 def run(args):
     data_dir = args.data
@@ -72,6 +72,7 @@ def run(args):
     config_data = args.config_data
     trainer = UnsupervisedTrainer(data_dir, model_dir, config_data)
     trainer.train()
+
 
 if __name__ == "__main__":
     args = get_args()

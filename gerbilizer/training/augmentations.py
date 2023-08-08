@@ -56,6 +56,7 @@ class TimeMask(nn.Module):
             x[i, start:end, :] = 0
         return x.reshape(*bshape, num_samples, num_channels)
 
+
 class SpectrogramMask(nn.Module):
     def __init__(self, prob: float = 0.5, d_model=768):
         super().__init__()
@@ -63,7 +64,7 @@ class SpectrogramMask(nn.Module):
 
         self.mask_token = nn.Parameter(torch.zeros(1, 1, d_model), requires_grad=True)
         nn.init.uniform_(self.mask_token, -0.1, 0.1)
-    
+
     def forward(self, x):
         # Shape of x: (batch, time, d_model)
         batch_shape = x.shape[:-2]
@@ -76,12 +77,13 @@ class SpectrogramMask(nn.Module):
 
 
 class SpectrogramGain(nn.Module):
-    """Spectrogram gain augmentation. Adds a random gain to the spectrogram.
-    """
+    """Spectrogram gain augmentation. Adds a random gain to the spectrogram."""
+
     def __init__(self, p: float = 0.5):
         super().__init__()
         self.p = p
         self.dist = torch.distributions.LogNormal(0, 0.25)
+
     def forward(self, x):
         # x shape: (batch..., time, freq)
         if x.dim() <= 2:
@@ -93,7 +95,9 @@ class SpectrogramGain(nn.Module):
         # Batched input
         x = x.reshape(-1, *x.shape[-2:])
         bsz = x.shape[0]
-        prob_mask = torch.rand(bsz) < self.p  # True for samples which should be augmented
+        prob_mask = (
+            torch.rand(bsz) < self.p
+        )  # True for samples which should be augmented
         noise = self.dist.sample((bsz,))
         noise[~prob_mask] = 1
         aug_x = x * noise[:, None, None]

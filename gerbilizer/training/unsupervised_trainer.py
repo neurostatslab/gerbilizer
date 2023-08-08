@@ -6,9 +6,13 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from torch.optim.lr_scheduler import (CosineAnnealingLR, ExponentialLR,
-                                      LinearLR, ReduceLROnPlateau,
-                                      SequentialLR)
+from torch.optim.lr_scheduler import (
+    CosineAnnealingLR,
+    ExponentialLR,
+    LinearLR,
+    ReduceLROnPlateau,
+    SequentialLR,
+)
 
 from ..architectures.attentionnet import GerbilizerAttentionNet
 from .logger import ProgressLogger
@@ -29,7 +33,7 @@ from .dataloaders import build_unsupervised_dataloader
 from .trainer import JSON, Trainer
 
 
-class UnsupervisedTrainer():
+class UnsupervisedTrainer:
     def __init__(
         self,
         data_dir: str,
@@ -71,34 +75,44 @@ class UnsupervisedTrainer():
         self.recent_batches_processed = 0
         self.num_steps = 0
         self.num_train_steps = self.__config["OPTIMIZATION"]["NUM_TRAIN_STEPS"]
-        self.steps_per_scheduler_update = self.__config["OPTIMIZATION"]["STEPS_PER_SCHEDULER_UPDATE"]
+        self.steps_per_scheduler_update = self.__config["OPTIMIZATION"][
+            "STEPS_PER_SCHEDULER_UPDATE"
+        ]
 
     def __init_dataloaders(self):
-        self.train_loader = build_unsupervised_dataloader(self.__datafile, self.__config)
+        self.train_loader = build_unsupervised_dataloader(
+            self.__datafile, self.__config
+        )
         self.__train_iter = iter(self.train_loader)
-    
-    def __init_output_dir(self):
-        self.__final_weights_file = os.path.join(self.__model_dir, 'final_weights.pt')
 
-        self.__config['WEIGHTS_PATH'] = self.__final_weights_file
-        self.__config['DATA']['DATAFILE_PATH'] = self.__datafile
+    def __init_output_dir(self):
+        self.__final_weights_file = os.path.join(self.__model_dir, "final_weights.pt")
+
+        self.__config["WEIGHTS_PATH"] = self.__final_weights_file
+        self.__config["DATA"]["DATAFILE_PATH"] = self.__datafile
 
         self.__init_logger()
 
-        self.num_weight_updates = self.__config['OPTIMIZATION']['NUM_TRAIN_STEPS'] // self.__config['OPTIMIZATION']['STEPS_PER_SCHEDULER_UPDATE']
+        self.num_weight_updates = (
+            self.__config["OPTIMIZATION"]["NUM_TRAIN_STEPS"]
+            // self.__config["OPTIMIZATION"]["STEPS_PER_SCHEDULER_UPDATE"]
+        )
 
         self.__progress_log = ProgressLogger(
             self.num_weight_updates,
             self.train_loader,
             self.train_loader,
-            self.__config['GENERAL']['LOG_INTERVAL'],
+            self.__config["GENERAL"]["LOG_INTERVAL"],
             self.__model_dir,
             self.__logger,
         )
-        self.__progress_log.num_train_images = self.__config['OPTIMIZATION']['NUM_TRAIN_STEPS'] * self.__config['DATA']['BATCH_SIZE']
+        self.__progress_log.num_train_images = (
+            self.__config["OPTIMIZATION"]["NUM_TRAIN_STEPS"]
+            * self.__config["DATA"]["BATCH_SIZE"]
+        )
 
     def __init_logger(self):
-        log_filepath = Path(self.__model_dir) / 'train.log'
+        log_filepath = Path(self.__model_dir) / "train.log"
         self.__logger = make_logger(log_filepath)
 
     def __init_model(self):
@@ -108,14 +122,16 @@ class UnsupervisedTrainer():
         self.model = GerbilizerAttentionNet(self.__config)
         self.model.to(self.device)
 
-        if self.__config['OPTIMIZATION']['LOSS'] == 'L2':
+        if self.__config["OPTIMIZATION"]["LOSS"] == "L2":
             self.loss_fn = unsupervised_mse_loss
-        elif self.__config['OPTIMIZATION']['LOSS'] == 'COSINE':
+        elif self.__config["OPTIMIZATION"]["LOSS"] == "COSINE":
             self.loss_fn = unsupervised_cosine_loss
         else:
-            raise NotImplementedError(f'Unrecognized loss function {self.__config["OPTIMIZATION"]["LOSS"]}')
+            raise NotImplementedError(
+                f'Unrecognized loss function {self.__config["OPTIMIZATION"]["LOSS"]}'
+            )
 
-        with open(os.path.join(self.__model_dir, "config.json"), 'w') as ctx:
+        with open(os.path.join(self.__model_dir, "config.json"), "w") as ctx:
             normal_json.dump(self.__config, ctx, indent=4)
 
         self.__logger.info(self.model.__repr__())
@@ -179,7 +195,7 @@ class UnsupervisedTrainer():
                 base_scheduler = LinearLR
                 scheduler_args = {
                     "total_iters": epochs_active,
-                    "start_factor": scheduler_config.get("START_SCALING_FACTOR", 1/5),
+                    "start_factor": scheduler_config.get("START_SCALING_FACTOR", 1 / 5),
                     "end_factor": scheduler_config.get("END_SCALING_FACTOR", 1),
                 }
             elif scheduler_type == "EXPONENTIAL_DECAY":
@@ -190,9 +206,7 @@ class UnsupervisedTrainer():
             elif scheduler_type == "REDUCE_ON_PLATEAU":
                 base_scheduler = ReduceLROnPlateau
                 scheduler_args = {
-                    "factor": scheduler_config.get(
-                        "MULTIPLICATIVE_DECAY_FACTOR", 0.1
-                    ),
+                    "factor": scheduler_config.get("MULTIPLICATIVE_DECAY_FACTOR", 0.1),
                     "patience": scheduler_config.get("PLATEAU_DECAY_PATIENCE", 10),
                     "threshold_mode": scheduler_config.get(
                         "PLATEAU_THRESHOLD_MODE", "rel"
@@ -212,7 +226,7 @@ class UnsupervisedTrainer():
         self.__scheduler = SequentialLR(
             self.__optim, schedulers=schedulers, milestones=milestones
         )
-    
+
     def fetch_data(self):
         try:
             batch = next(self.__train_iter)
@@ -224,7 +238,7 @@ class UnsupervisedTrainer():
     def train_step(self):
         self.model.train()
         self.__optim.zero_grad()
-        
+
         batch = self.fetch_data()
         batch = batch.to(self.device)
         reconstructed_tokens, teacher_tokens = self.model(batch)
@@ -238,7 +252,7 @@ class UnsupervisedTrainer():
         self.recent_batches_processed += 1
 
         return loss
-    
+
     def save_weights(self, filepath):
         torch.save(self.model.state_dict(), filepath)
 
@@ -248,7 +262,14 @@ class UnsupervisedTrainer():
             for _ in range(self.steps_per_scheduler_update):
                 last_loss = self.train_step()
             self.__scheduler.step()
-            self.__progress_log.log_train_batch(last_loss.item(), np.nan, self.steps_per_scheduler_update * self.__config['DATA']['BATCH_SIZE'])
-            if time.time() - self.last_weight_update > self.__config['OPTIMIZATION']['SAVE_WEIGHTS_INTERVAL']:
+            self.__progress_log.log_train_batch(
+                last_loss.item(),
+                np.nan,
+                self.steps_per_scheduler_update * self.__config["DATA"]["BATCH_SIZE"],
+            )
+            if (
+                time.time() - self.last_weight_update
+                > self.__config["OPTIMIZATION"]["SAVE_WEIGHTS_INTERVAL"]
+            ):
                 self.save_weights(self.__final_weights_file)
                 self.last_weight_update = time.time()

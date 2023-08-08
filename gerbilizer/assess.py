@@ -315,9 +315,7 @@ if __name__ == "__main__":
     )
 
     batch_size = config_data["DATA"]["BATCH_SIZE"]
-    dataloader = DataLoader(
-        dataset, batch_size=batch_size, shuffle=False
-    )
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
     # make the parent directories for the desired outfile if they don't exist
     parent = Path(args.outfile).parent

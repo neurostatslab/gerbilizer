@@ -23,7 +23,7 @@ DEFAULT_CONFIG = {
         "INITIAL_LEARNING_RATE": 0.02,
         "SCHEDULERS": [
             {"SCHEDULER_TYPE": "LINEAR", "NUM_EPOCHS_ACTIVE": 5},
-            {"SCHEDULER_TYPE": "COSINE_ANNEALING", "MIN_LEARNING_RATE": 0.0}
+            {"SCHEDULER_TYPE": "COSINE_ANNEALING", "MIN_LEARNING_RATE": 0.0},
         ],
         "LOSS": "COSINE",
         "SAVE_WEIGHTS_INTERVAL": 3600,  # one hour in seconds
@@ -61,7 +61,6 @@ DEFAULT_CONFIG = {
             "MIN_LENGTH": 75,  # 0.6 ms at 125 kHz
             "MAX_LENGTH": 125,  # 1 ms at 125 kHz
         },
-
         "SPECTROGRAM_GAIN": {
             "PROB": 0.5,
         },
