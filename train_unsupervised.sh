@@ -5,8 +5,8 @@
 #SBATCH -c 6
 #SBATCH --gpus=1
 #SBATCH --mem=64GB
-#SBATCH --time=3-0
-#SBATCH -o slurm_logs/train_model_%j.log
+#SBATCH --time=6-0
+#SBATCH -o slurm_logs/train_unsupervised.log
 pwd; hostname; date;
 
 config_path='/mnt/home/atanelus/repos/gerbilizer/unsupervised_config.json5'
