@@ -72,11 +72,11 @@ def digitize(locations, bin_edges) -> np.ndarray:
         err_display = [
             f"idx: {p} | value: {v}" for (p, v) in zip(positions.nonzero(), values)
         ]
-        raise ValueError(
-            f"Encountered value far greater than the largest bin edge! "
-            f"Largest bin edge: {bin_edges[-1]}; Invalid values and their "
-            f"positions: {err_display}"
-        )
+        # raise ValueError(
+        #     f"Encountered value far greater than the largest bin edge! "
+        #     f"Largest bin edge: {bin_edges[-1]}; Invalid values and their "
+        #     f"positions: {err_display}"
+        # )
     # if not, say that the values were sufficiently close to the bin edges
     # and clip them to match the number of bins
     num_bins = len(bin_edges) - 1
