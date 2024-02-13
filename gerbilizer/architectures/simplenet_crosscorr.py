@@ -44,9 +44,9 @@ class CorrSimpleNetwork(GerbilizerArchitecture):
         # Obtains model-specific parameters from the config file and fills in missing entries with defaults
         model_config = CorrSimpleNetwork.defaults.copy()
         model_config.update(CONFIG.get("MODEL_PARAMS", {}))
-        CONFIG[
-            "MODEL_PARAMS"
-        ] = model_config  # Save the parameters used in this run for backward compatibility
+        CONFIG["MODEL_PARAMS"] = (
+            model_config  # Save the parameters used in this run for backward compatibility
+        )
 
         should_downsample = model_config["SHOULD_DOWNSAMPLE"]
         self.n_channels = model_config["CONV_NUM_CHANNELS"]

@@ -1,6 +1,7 @@
 """
 File to configure all hyperparameters (model architecture and training).
 """
+
 from sys import stderr
 from typing import NewType
 
@@ -38,7 +39,7 @@ DEFAULT_CONFIG = {
         "BATCH_SIZE": 32,
         "CROP_LENGTH": 8192,
         "AUGMENT_DATA": True,
-        "ARENA_DIMS": [558.9, 355.6],
+        "ARENA_DIMS": [572, 356],
     },
     "AUGMENTATIONS": {
         # Data augmentations: involves performing augmentations to the audio to which the model should be invariant

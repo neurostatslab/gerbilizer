@@ -3,15 +3,12 @@ Functions to construct Datasets and DataLoaders for training and inference
 """
 
 import os
-from itertools import combinations
-from math import comb
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
 import h5py
 import numpy as np
 import torch
-from scipy.signal import correlate
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
 
@@ -42,7 +39,7 @@ class GerbilVocalizationDataset(Dataset):
             self.dataset = datapath
 
         if not isinstance(arena_dims, np.ndarray):
-            arena_dims = np.array(arena_dims)
+            arena_dims = np.array(arena_dims).astype(np.float32)
 
         if "length_idx" not in self.dataset:
             raise ValueError("Improperly formatted dataset")
@@ -87,12 +84,12 @@ class GerbilVocalizationDataset(Dataset):
         start, end = dataset["length_idx"][idx : idx + 2]
         audio = dataset["audio"][start:end, ...]
         audio = (audio - audio.mean()) / audio.std()
-        return audio
+        return torch.from_numpy(audio.astype(np.float32))
 
     def __label_for_index(self, dataset: h5py.File, idx: int):
         if "locations" not in dataset:
             return None
-        return dataset["locations"][idx]
+        return torch.from_numpy(dataset["locations"][idx].astype(np.float32))
 
     def scale_features(
         self,
@@ -105,20 +102,15 @@ class GerbilVocalizationDataset(Dataset):
 
         scaled_labels = None
         if labels is not None and self.arena_dims is not None:
-            scaled_labels = np.empty_like(labels)
-
             # Shift range to [-1, 1]
-            x_scale = self.arena_dims[0] / 2  # Arena half-width (mm)
-            y_scale = self.arena_dims[1] / 2
-            scaled_labels = labels / np.array([x_scale, y_scale])
+            scaled_labels = labels / torch.from_numpy(self.arena_dims) * 2
 
         scaled_audio = (audio - audio.mean()) / audio.std()
 
         return scaled_audio, scaled_labels
 
     def __processed_data_for_index__(self, idx: int):
-        sound = self.__audio_for_index(self.dataset, idx).astype(np.float32)
-        sound = torch.from_numpy(sound)  # Padding numpy arrays yields an error
+        sound = self.__audio_for_index(self.dataset, idx)
         sound = self.__make_crop(sound, self.crop_length)
 
         location = self.__label_for_index(self.dataset, idx)
@@ -126,6 +118,18 @@ class GerbilVocalizationDataset(Dataset):
         sound, location = self.scale_features(sound, location)
 
         return sound, location
+
+    def collate(self, batch) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Collate function for the dataloader. Takes a list of (audio, label) tuples and returns
+        a batch of audio and labels.
+        """
+        audio, labels = [x[0] for x in batch], [x[1] for x in batch]
+        audio = torch.stack(audio)
+        if labels[0] is not None:
+            labels = torch.stack(labels)
+        else:
+            labels = [None] * len(audio)
+        return audio, labels
 
 
 def build_dataloaders(
@@ -141,8 +145,8 @@ def build_dataloaders(
 
     index_arrays = {"train": None, "val": None}
     if index_dir is not None:
-        index_arrays["train"] = np.load(index_dir / "train.npy")
-        index_arrays["val"] = np.load(index_dir / "val.npy")
+        index_arrays["train"] = np.load(index_dir / "train_set.npy")
+        index_arrays["val"] = np.load(index_dir / "val_set.npy")
 
     avail_cpus = max(1, len(os.sched_getaffinity(0)) - 1)
 
@@ -168,9 +172,6 @@ def build_dataloaders(
         crop_length=crop_length,
         index=index_arrays["train"],
     )
-    train_dataloader = DataLoader(
-        traindata, batch_size=batch_size, shuffle=True, num_workers=avail_cpus
-    )
 
     valdata = GerbilVocalizationDataset(
         val_path,
@@ -179,8 +180,20 @@ def build_dataloaders(
         inference=True,
         index=index_arrays["val"],
     )
+    train_dataloader = DataLoader(
+        traindata,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=avail_cpus,
+        collate_fn=traindata.collate,
+    )
+
     val_dataloader = DataLoader(
-        valdata, batch_size=batch_size, num_workers=avail_cpus, shuffle=False
+        valdata,
+        batch_size=batch_size,
+        num_workers=avail_cpus,
+        shuffle=False,
+        collate_fn=valdata.collate,
     )
 
     return train_dataloader, val_dataloader

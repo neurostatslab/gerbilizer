@@ -3,6 +3,7 @@ Assess covariance models on a dataset, tracking metrics like mean error,
 area of the 95% confidence set for each prediction
 and whether the true value was in that set, etc.
 """
+
 import argparse
 import json
 import logging
@@ -15,6 +16,7 @@ import numpy as np
 import torch
 from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from gerbilizer.architectures.base import GerbilizerArchitecture
 from gerbilizer.architectures.ensemble import GerbilizerEnsemble
@@ -121,10 +123,7 @@ def assess_model(
         config_string = json.dumps(model.config)
         f.attrs["model_config"] = config_string
 
-        if not inference:
-            scaled_locations_dataset = f.create_dataset(
-                "scaled_locations", shape=(N, 2)
-            )
+        scaled_locations_dataset = None
 
         if isinstance(model, GerbilizerEnsemble):
             raw_output_dataset = []
@@ -149,7 +148,7 @@ def assess_model(
 
         with torch.no_grad():
             idx = 0
-            for sounds, locations in iter(dataloader):
+            for sounds, locations in tqdm(dataloader):
                 sounds = sounds.to(device)
                 # If inference, locations will be None
 
@@ -173,12 +172,16 @@ def assess_model(
                     )
 
                     # unscale location from [-1, 1] square to units in arena (in mm)
-                    if not inference:
+                    if location is not None:
                         scaled_location = (
                             output._convert(location[None], Unit.ARBITRARY, Unit.MM)
                             .cpu()
                             .numpy()
                         )
+                        if scaled_locations_dataset is None:
+                            scaled_locations_dataset = f.create_dataset(
+                                "scaled_locations", shape=(N, 2)
+                            )
                         scaled_locations_dataset[idx] = scaled_location
 
                         # other useful info
@@ -340,6 +343,12 @@ if __name__ == "__main__":
     # if provided in cm, convert to MM
     if arena_dims_units == "CM":
         arena_dims = np.array(arena_dims) * 10
+    elif arena_dims_units == "M":
+        arena_dims = np.array(arena_dims) * 1000
+    else:
+        raise ValueError(
+            "ARENA_DIMS_UNITS must be one of 'CM' or 'M' to specify the units of the arena dimensions."
+        )
 
     index = None
     if args.index is not None:
@@ -356,7 +365,9 @@ if __name__ == "__main__":
     )
 
     batch_size = config_data["DATA"]["BATCH_SIZE"]
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+    dataloader = DataLoader(
+        dataset, batch_size=batch_size, shuffle=False, collate_fn=dataset.collate
+    )
 
     # make the parent directories for the desired outfile if they don't exist
     parent = Path(args.outfile).parent
