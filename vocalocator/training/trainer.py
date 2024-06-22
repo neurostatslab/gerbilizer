@@ -331,7 +331,10 @@ class Trainer:
                         err = np.linalg.norm(point_estimate - location, axis=-1).item()
                         batch_err += err
 
-                        if isinstance(output, ProbabilisticOutput):
+                        if (
+                            isinstance(output, ProbabilisticOutput)
+                            and location.shape[-1] == 2
+                        ):
                             compute_calibration = True
                             if idx == 0:
                                 ca = CalibrationAccumulator(

@@ -2,6 +2,7 @@ from typing import Union
 
 import torch
 from torch.nn import functional as F
+
 from vocalocator.outputs.base import BaseDistributionOutput, Unit
 
 
@@ -91,6 +92,156 @@ class GaussianOutput(BaseDistributionOutput):
             A = 0.5 * torch.diag(self.arena_dims[units])
             scaled_cholesky = A @ scaled_cholesky
         return scaled_cholesky @ scaled_cholesky.swapaxes(-2, -1)
+
+
+class GaussianOutput3dIndependentHeight(GaussianOutput):
+
+    N_OUTPUTS_EXPECTED = 7
+    config_name = "GAUSSIAN_3D_INDEPENDENT_HEIGHT"
+
+    def __init__(
+        self,
+        raw_output: torch.Tensor,
+        arena_dims: torch.Tensor,
+        arena_dim_units: Unit,
+    ):
+        super().__init__(raw_output, arena_dims, arena_dim_units)
+
+        # expect subclasses to provide this instance variable
+        # in their init methods
+        self.cholesky_covs: torch.Tensor
+
+        self.n_dims: int = 3
+
+        self.plane_raw_output = raw_output[
+            :, : GaussianOutputFullCov.N_OUTPUTS_EXPECTED
+        ]
+        self.height_raw_output = raw_output[
+            :, GaussianOutputFullCov.N_OUTPUTS_EXPECTED :
+        ]
+
+        self.plane_output = GaussianOutputFullCov(
+            self.plane_raw_output, arena_dims, arena_dim_units
+        )
+
+    def _point_estimate(self):
+        """
+        Return the mean of the Gaussian(s) in the specified units.
+        """
+        # first two values of model output are always interpreted as the mean
+        xy = torch.clamp(self.plane_raw_output[:, :2], -1, 1)
+        height = torch.clamp(self.height_raw_output[:, 0], -1, 1)
+        return torch.cat((xy, height[:, None]), dim=-1)
+
+    def _log_p(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Return log p(x) under the Gaussian parameterized by the model
+        output.
+
+        Expects x to have shape (..., self.batch_size, 3), and to be provided
+        in arbitrary units (i.e. on the square [-1, 1]^3).
+        """
+        # Handle the case where the dimensions of x are not the same as that of the
+        # model output
+        if x.shape[-1] < self.n_dims:
+            # Issue warning if ground truth location does not contain height info
+            raise ValueError(
+                f"Expected ground truth location to contain height information, "
+                f"but instead found shape {x.shape}."
+            )
+
+        if x.shape[-1] > self.n_dims:
+            x = x[..., : self.n_dims]
+        # Handle the case where there are multiple nodes in the ground truth location
+        # Subclasses should override this
+        if (
+            len(x.shape) > 2
+            and x.shape[-2] != self.batch_size
+            and x.shape[-3] == self.batch_size
+        ):
+            x = x[:, 0, :]
+
+        height_scale = F.softplus(self.height_raw_output[:, 1])
+        distr_plane = torch.distributions.MultivariateNormal(
+            loc=self.plane_output.point_estimate(),
+            scale_tril=self.plane_output.cholesky_covs,
+        )
+        distr_height = torch.distributions.Normal(
+            loc=self.height_raw_output[:, 0], scale=height_scale
+        )
+        return distr_plane.log_prob(x[:, :2]) + distr_height.log_prob(x[:, 2])
+
+    def covs(self, units: Unit) -> torch.Tensor:
+        covariance = torch.zeros(self.batch_size, 3, 3, device=self.device)
+        covariance[:, :2, :2] = self.plane_output.covs(units)
+        covariance[:, 2, 2] = F.softplus(self.height_raw_output[:, 1])
+        return covariance
+
+
+class GaussianOutput3dFullCov(GaussianOutput):
+
+    N_OUTPUTS_EXPECTED = 9
+    config_name = "GAUSSIAN_3D_FULL_COV"
+
+    def __init__(
+        self,
+        raw_output: torch.Tensor,
+        arena_dims: torch.Tensor,
+        arena_dim_units: Unit,
+    ):
+        super().__init__(raw_output, arena_dims, arena_dim_units)
+
+        self.n_dims: int = 3
+
+        L = torch.zeros(self.batch_size, 3, 3, device=self.device)
+        # embed the elements into the matrix
+        idxs = torch.tril_indices(3, 3)
+        L[:, idxs[0], idxs[1]] = self.raw_output[:, 3:]
+        # apply softplus to the diagonal entries to guarantee the resulting
+        # matrix is positive definite
+        new_diagonals = F.softplus(L.diagonal(dim1=-2, dim2=-1))
+        L = L.diagonal_scatter(new_diagonals, dim1=-2, dim2=-1)
+        # reshape y_hat so we can concatenate it to L
+        self.cholesky_covs = L
+
+    def _log_p(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Return log p(x) under the Gaussian parameterized by the model
+        output.
+
+        Expects x to have shape (..., self.batch_size, 3), and to be provided
+        in arbitrary units (i.e. on the square [-1, 1]^3).
+        """
+        # Handle the case where the dimensions of x are not the same as that of the
+        # model output
+        if x.shape[-1] < self.n_dims:
+            # Issue warning if ground truth location does not contain height info
+            raise ValueError(
+                f"Expected ground truth location to contain height information, "
+                f"but instead found shape {x.shape}."
+            )
+
+        if x.shape[-1] > self.n_dims:
+            x = x[..., : self.n_dims]
+        # Handle the case where there are multiple nodes in the ground truth location
+        # Subclasses should override this
+        if (
+            len(x.shape) > 2
+            and x.shape[-2] != self.batch_size
+            and x.shape[-3] == self.batch_size
+        ):
+            x = x[:, 0, :]
+        distr = torch.distributions.MultivariateNormal(
+            loc=self.point_estimate(), scale_tril=self.cholesky_covs
+        )
+        return distr.log_prob(x)
+
+    def covs(self, units: Unit) -> torch.Tensor:
+        covariance = self.cholesky_covs @ self.cholesky_covs.swapaxes(-2, -1)
+        if units != Unit.ARBITRARY:
+            A = 0.5 * torch.diag(self.arena_dims[units])
+            covariance = A @ covariance @ A.T
+        return covariance
 
 
 class GaussianOutputFixedVariance(GaussianOutput):
